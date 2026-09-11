@@ -1,8 +1,10 @@
 """Збирає дані сторінки зіставлення: analysis/out/page_data.json.
 Бере готові telegram.json і search_vs_read.json, дораховує мову, категорії тижня й панель."""
-import collections, datetime as dt, json, pathlib, re
+import collections, datetime as dt, json, pathlib, re, sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 D, OUT = ROOT / "data", ROOT / "analysis" / "out"
+sys.path.insert(0, str(ROOT))
+from lib import kyiv_now
 UK, RU = set("іїєґ"), set("ыэъё")
 CATS = {1: "Авто", 2: "Краса і мода", 3: "Бізнес і фінанси", 4: "Розваги", 5: "Їжа і напої", 6: "Ігри",
         7: "Здоров'я", 8: "Хобі і дозвілля", 9: "Робота і освіта", 10: "Право і держава", 11: "Інше",
@@ -91,7 +93,7 @@ for k, s in panel.items():
 movers.sort(key=lambda m: -m["lift"])
 
 page = {
-    "built": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
+    "built": kyiv_now().strftime("%Y-%m-%d %H:%M"),  # київський: хмара живе в UTC
     "telegram": json.loads((OUT / "telegram.json").read_text()),
     "svr": json.loads((OUT / "search_vs_read.json").read_text()),
     "lang": lang, "cats": cats, "week": week,

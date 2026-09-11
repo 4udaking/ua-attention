@@ -62,7 +62,7 @@ jobs:
             echo "змін немає"
           else
             git commit -m "збір $(TZ=Europe/Kyiv date '+%Y-%m-%d %H:%M Київ')"
-            git pull --rebase
+            git pull --rebase --autostash
             git push
           fi
 

@@ -175,7 +175,7 @@ const fmt=n=>n.toLocaleString("uk-UA");
 const pct=(a,b)=>Math.round(100*a/b);
 const vb=v=>v>=1000?(v/1000).toLocaleString("uk-UA")+" тис.+":v+"+";
 const T=DATA.telegram, S=DATA.svr;
-document.getElementById("built").textContent=DATA.built.slice(0,10).split("-").reverse().join(".");
+document.getElementById("built").textContent=DATA.built.slice(0,10).split("-").reverse().join(".")+" о "+DATA.built.slice(11)+" за Києвом";
 
 // ---- вчора ----
 const DY=S.day, CN={"1": "Авто", "2": "Краса і мода", "3": "Бізнес і фінанси", "4": "Розваги", "5": "Їжа і напої", "6": "Ігри", "7": "Здоров'я", "8": "Хобі і дозвілля", "9": "Робота і освіта", "10": "Право і держава", "11": "Інше", "13": "Тварини", "14": "Політика", "15": "Наука", "16": "Покупки", "17": "Спорт", "18": "Технології", "19": "Подорожі і транспорт", "20": "Клімат"};
