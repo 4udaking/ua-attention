@@ -12,3 +12,6 @@
 {"ts": "2026-09-11T20:25:38+03:00", "runner": "actions", "layer": "wiki", "status": "ok", "fetched": 0, "not_yet": [], "range": "2026-08-28..2026-09-10"}
 {"ts": "2026-09-11T20:25:55+03:00", "runner": "actions", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
 {"ts": "2026-09-11T20:30:24+03:00", "runner": "actions", "layer": "panel", "status": "partial", "fetched": 4, "left": -3}
+{"ts": "2026-09-11T23:08:56+03:00", "runner": "laptop", "layer": "wiki", "status": "ok", "fetched": 0, "not_yet": [], "range": "2026-08-28..2026-09-10"}
+{"ts": "2026-09-11T23:09:26+03:00", "runner": "laptop", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
+{"ts": "2026-09-11T23:11:40+03:00", "runner": "laptop", "layer": "panel", "status": "partial", "fetched": 4, "left": -3}
