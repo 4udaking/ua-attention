@@ -1,5 +1,6 @@
 """Спільне для збирачів: HTTP з відступом на 429, київський час, журнал запусків."""
 import datetime as dt
+import http.cookiejar
 import json
 import os
 import pathlib
@@ -15,6 +16,23 @@ BROWSER_UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.3
 # Вікімедіа вимагає впізнаваний UA з контактом, браузерний їй не підходить.
 WIKI_UA = "ua-attention/0.1 (daily attention tracker; boykojunior@gmail.com)"
 RUNNER = os.environ.get("UA_ATT_RUNNER", "laptop")
+# Explore без cookie NID відповідає 429 навіть на перший запит, з cookie — 200 (перевірено 11.09.2026).
+_JAR = http.cookiejar.CookieJar()
+_OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(_JAR))
+
+
+def google_warmup():
+    """Отримати NID/AEC. Сторінка /trends/explore сама віддає 429, тож гріємося головною."""
+    for u in ("https://trends.google.com/trends/?geo=UA", "https://www.google.com/"):
+        try:
+            fetch(u, waits=(10,))
+        except Exception:
+            pass
+    return sorted({c.name for c in _JAR})
+
+
+def reset_cookies():
+    _JAR.clear()
 
 
 class Throttled(Exception):
@@ -41,7 +59,7 @@ def fetch(url, data=None, headers=None, ua=BROWSER_UA, waits=(20, 60, 150), time
     for attempt in range(len(waits) + 1):
         try:
             req = urllib.request.Request(url, data=body, headers=hdr)
-            with urllib.request.urlopen(req, timeout=timeout) as r:
+            with _OPENER.open(req, timeout=timeout) as r:
                 return r.read().decode("utf-8")
         except urllib.error.HTTPError as e:
             if e.code == 429 and attempt < len(waits):

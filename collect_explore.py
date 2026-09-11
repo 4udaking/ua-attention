@@ -16,14 +16,15 @@ import random
 import sys
 import time
 import urllib.parse
-from lib import DATA, ROOT, fetch, kyiv_now, log, write_json, Throttled
+from lib import DATA, ROOT, fetch, google_warmup, kyiv_now, log, reset_cookies, write_json, Throttled
 
 GEO, HL, TZ = "UA", "uk", "-180"
 CFG = json.loads((ROOT / "panel.json").read_text(encoding="utf-8"))
 
 
 def pause():
-    time.sleep(random.uniform(4, 8))
+    # 11.09.2026: при 4–8 с Google різав після ~14 запитів поспіль.
+    time.sleep(random.uniform(12, 20))
 
 
 def api(path, params):
@@ -86,17 +87,28 @@ def collect_panel(day):
 def main():
     day = kyiv_now().date()
     rc = 0
+    print("cookie:", google_warmup())
+    retried = False
     for layer, fn in (("explore_top", collect_top), ("panel", collect_panel)):
-        try:
-            done, left = fn(day)
-            log(layer, "ok" if left == 0 else "partial", fetched=done, left=left)
-        except Throttled:
-            log(layer, "throttled")
-            rc = 2
-            break  # далі в цьому запуску все одно 429
-        except Exception as e:
-            log(layer, "error", error=f"{type(e).__name__}: {e}"[:300])
-            rc = 1
+        while True:
+            try:
+                done, left = fn(day)
+                log(layer, "ok" if left == 0 else "partial", fetched=done, left=left)
+                break
+            except Throttled:
+                if retried:
+                    log(layer, "throttled")
+                    return 2  # далі в цьому запуску все одно 429; зроблене вже на диску
+                # один раз на запуск: свіжі cookie і хвилина тиші
+                retried = True
+                log(layer, "throttled_retry")
+                reset_cookies()
+                time.sleep(90)
+                google_warmup()
+            except Exception as e:
+                log(layer, "error", error=f"{type(e).__name__}: {e}"[:300])
+                rc = 1
+                break
     return rc
 
 
