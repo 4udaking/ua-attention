@@ -54,7 +54,11 @@ def collect_top(day):
             continue
         pause()
         ws = explore([""], cat, tf)
-        w = next(x for x in ws if x["id"] == "RELATED_QUERIES")
+        w = next((x for x in ws if x["id"] == "RELATED_QUERIES"), None)
+        if w is None:  # Google не дає блоку, коли даних замало (буває для now 1-d) — фіксуємо як порожнє
+            have[k] = {"top": [], "rising": [], "note": "no RELATED_QUERIES widget"}
+            write_json(p, have)
+            continue
         L = widget(w, "relatedsearches")["default"]["rankedList"]
         pick = lambda i: [[q["query"], q["value"], q.get("formattedValue")] for q in (L[i]["rankedKeyword"] if len(L) > i else [])]
         have[k] = {"top": pick(0), "rising": pick(1)}
