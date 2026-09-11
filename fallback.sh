@@ -12,6 +12,11 @@ has_remote=$(git remote | head -1)
 
 sync_remote() {
   [ -z "$has_remote" ] && return 0
+  # це й робоча копія для правок коду: з незакоміченими змінами поза data/ git не чіпаємо взагалі
+  if [ -n "$(git status --porcelain -- . ':!data')" ]; then
+    echo "незакомічені зміни коду — синхронізацію пропускаю, дані лишаються локально"
+    return 3
+  fi
   git fetch -q origin || return 1
   if [ -n "$(git status --porcelain data)" ] || [ "$(git rev-list --count origin/main..HEAD)" != "0" ]; then
     git add data && git commit -q -m "збір (ноутбук) $(date '+%Y-%m-%d %H:%M')" 2>/dev/null
@@ -49,6 +54,7 @@ PY
 
 sync_remote
 collect
-sync_remote || { collect; sync_remote; }
-[ -n "$has_remote" ] && git push -q origin HEAD:main 2>&1 | tail -1
+sync_remote; rc=$?
+[ "$rc" = "2" ] && { collect; sync_remote; rc=$?; }
+[ "$rc" = "0" ] && [ -n "$has_remote" ] && git push -q origin HEAD:main 2>&1 | tail -1
 tail -3 data/log.ndjson
