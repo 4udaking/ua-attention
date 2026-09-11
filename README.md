@@ -41,5 +41,8 @@ Telegram в архіві трендував 13 разів за 17 міс. (ма�
 
 `analysis/` — `fetch_history.py` (поденний пошук Telegram/YouTube, 3 вікна), `telegram_spikes.py`, `compare.py`
 (тренди × сплески читання), `assemble.py` → `out/page_data.json`, `build_page.py` → `index.html`.
-Сторінка: https://claude.ai/code/artifact/461a3027-c1f3-4dc2-9b68-e8ea437bfd93
+Сторінка (оновлюється сама після кожного збору): https://4udaking.github.io/ua-attention/
+Знімок від 11.09.2026 як артефакт Claude: https://claude.ai/code/artifact/461a3027-c1f3-4dc2-9b68-e8ea437bfd93
+Блок «Вчора» — остання доба з даними Вікіпедії (зазвичай учорашня за UTC): тренди доби, сплески читання, пари між ними,
+«росте за тиждень» з Explore і платформи проти медіани тих самих днів тижня за 4 попередні тижні.
 Перезбір: `python3 analysis/compare.py && python3 analysis/telegram_spikes.py && python3 analysis/assemble.py && python3 analysis/build_page.py`
