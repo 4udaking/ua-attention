@@ -1,0 +1,3 @@
+{"ts": "2026-09-11T16:52:47+03:00", "runner": "laptop", "layer": "trending", "status": "ok", "window": 817, "active": 35, "written": 817, "new": 817, "rss": 10}
+{"ts": "2026-09-11T16:52:48+03:00", "runner": "laptop", "layer": "trending", "status": "ok", "window": 817, "active": 35, "written": 0, "new": 0, "rss": 10}
+{"ts": "2026-09-11T16:53:07+03:00", "runner": "laptop", "layer": "wiki", "status": "ok", "fetched": 28, "not_yet": [], "range": "2026-08-28..2026-09-10"}
