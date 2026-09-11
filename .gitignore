@@ -1,3 +1,6 @@
 out/
 __pycache__/
 *.tmp
+site/
+analysis/out/
+analysis/index.html

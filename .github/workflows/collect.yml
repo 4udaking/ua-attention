@@ -17,6 +17,8 @@ concurrency:
 
 permissions:
   contents: write
+  pages: write        # викладення сторінки на GitHub Pages
+  id-token: write
 
 jobs:
   collect:
@@ -40,6 +42,17 @@ jobs:
         continue-on-error: true
         run: python3 collect_explore.py
 
+      - name: Сторінка — перезбір
+        # Після кожного збору: зіставлення шарів, блок «Вчора», site/index.html.
+        # Перед комітом — щоб кеш перевірки Вікіпедії (data/cache) теж потрапив у git.
+        if: always()
+        continue-on-error: true
+        run: |
+          python3 analysis/compare.py > /dev/null
+          python3 analysis/telegram_spikes.py > /dev/null
+          python3 analysis/assemble.py > /dev/null
+          python3 analysis/build_page.py
+
       - name: Зберегти зміни
         run: |
           git config user.name "ua-attention-collector"
@@ -55,3 +68,20 @@ jobs:
 
       - name: Підсумок
         run: tail -4 data/log.ndjson
+
+      - name: Сторінка — пакет для Pages
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  publish:
+    needs: collect
+    if: always() && needs.collect.result != 'cancelled'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

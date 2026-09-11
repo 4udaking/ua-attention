@@ -83,12 +83,24 @@ section.block{display:grid;gap:16px}
 .row svg{display:block;width:100%;height:30px}
 .cat .row{grid-template-columns:150px 1fr 38%}
 .cat .row .ex{font-size:12.5px;color:var(--ink2);line-height:1.35}
+.today{display:grid;gap:14px}
+.today .cols3{display:grid;grid-template-columns:1fr 1fr 0.8fr;gap:24px}
+.today ol{margin:0;padding:0;list-style:none;display:grid;gap:0;font-size:13.5px}
+.today li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--grid)}
+.today li .t{color:var(--ink)}
+.today li .t small{display:block;color:var(--muted);font:11.5px/1.35 var(--mono)}
+.today li .v{font:500 12.5px/1.4 var(--mono);color:var(--ink2);white-space:nowrap;text-align:right}
+.today .link{color:var(--both);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:12.5px/1 var(--mono);padding:5px 7px;border-radius:4px;border:1px solid var(--rule);color:var(--ink2);background:var(--surface)}
+.chip.hot{border-color:var(--read);color:var(--ink)}
 .fail{display:grid;gap:10px;margin:0;padding:0;list-style:none}
 .fail li{display:grid;grid-template-columns:120px 1fr;gap:16px;padding:10px 0;border-top:1px solid var(--rule)}
 .fail .s{font:500 11px/1.4 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--accent)}
 .fail .s.ok{color:var(--both)}
 footer{font-size:13px;color:var(--muted);display:grid;gap:6px;max-width:84ch}
 @media (max-width:760px){
+  .today .cols3{grid-template-columns:1fr}
   .page{padding:28px 16px 48px;gap:32px}
   .layers{grid-template-columns:1fr 1fr}
   .layers div:nth-child(3){padding-left:0;border-left:0}
@@ -104,10 +116,12 @@ footer{font-size:13px;color:var(--muted);display:grid;gap:6px;max-width:84ch}
 
 <main class="page">
   <header>
-    <p class="eyebrow">Україна · листопад 2024 — вересень 2026 · зібрано <span id="built"></span></p>
+    <p class="eyebrow">Україна · з листопада 2024 · оновлюється щодня · зібрано <span id="built"></span></p>
     <h1>Чотири шари уваги</h1>
     <p class="lede">Що раптом шукають, що шукають завжди і що читають — це три різні виміри, а не три шкали одного. Нижче вони поставлені поруч на тих самих днях. Найбільше розходяться там, де здається, що мали б збігатися.</p>
   </header>
+
+  <section class="block today" id="today"></section>
 
   <div class="layers" id="layers"></div>
 
@@ -162,6 +176,23 @@ const pct=(a,b)=>Math.round(100*a/b);
 const vb=v=>v>=1000?(v/1000).toLocaleString("uk-UA")+" тис.+":v+"+";
 const T=DATA.telegram, S=DATA.svr;
 document.getElementById("built").textContent=DATA.built.slice(0,10).split("-").reverse().join(".");
+
+// ---- вчора ----
+const DY=S.day, CN={"1": "Авто", "2": "Краса і мода", "3": "Бізнес і фінанси", "4": "Розваги", "5": "Їжа і напої", "6": "Ігри", "7": "Здоров'я", "8": "Хобі і дозвілля", "9": "Робота і освіта", "10": "Право і держава", "11": "Інше", "13": "Тварини", "14": "Політика", "15": "Наука", "16": "Покупки", "17": "Спорт", "18": "Технології", "19": "Подорожі і транспорт", "20": "Клімат"};
+const cat=c=>c&&c.length?CN[c[0]]||"":"";
+const tSec=DY.trends.slice(0,10).map(t=>`<li><span class="t">${esc(t.title)}<small>${cat(t.cats)}${t.echo.length?` · <span class="link">↔ ${esc(t.echo[0])}</span>`:""}</small></span><span class="v">${vb(t.vol)}</span></li>`).join("");
+const sSec=DY.surges.filter(x=>x.desktop_share==null||x.desktop_share<0.4).slice(0,10).map(x=>`<li><span class="t">${esc(x.article)}<small>${x.trends.length?`<span class="link">↔ «${esc(x.trends[0])}»</span>`:"у Google без пари"}</small></span><span class="v">${fmt(x.views)}</span></li>`).join("");
+const rSec=Object.entries(DATA.rising).map(([k,l])=>`<h3>${k}</h3><ol>${l.slice(0,6).map(([q,f])=>`<li><span class="t">${esc(q)}</span><span class="v">${esc(f)}</span></li>`).join("")}</ol>`).join("");
+const mv=DATA.movers, hot=mv.filter(m=>m.lift>=1.5);
+document.getElementById("today").innerHTML=`<h2>Вчора, ${fd(DY.date)}</h2>
+<p>${DY.has_live?`У трендах Google — <b>${fmt(DY.n_trends)}</b> тем, у топ-100 української Вікіпедії — <b>${DY.n_surges}</b> нових статей; збіглися <b>${DY.n_match}</b>.`:`Трендів Google за цю добу немає в жодному архіві — лише читання.`} Зелене ↔ — пара між шарами.</p>
+<div class="cols3">
+<section><h3>Злетіло в пошуку</h3><ol>${tSec||"<li>—</li>"}</ol></section>
+<section><h3>Злетіло в читанні</h3><ol>${sSec||"<li>—</li>"}</ol></section>
+<section style="display:grid;gap:8px;align-content:start"><h3 style="color:var(--muted);font-weight:500">Росте в пошуку за тиждень · ${DATA.top_snapshot?fd(DATA.top_snapshot):""}</h3>${rSec}</section>
+</div>
+<div style="display:grid;gap:6px"><h3>Платформи проти тих самих днів тижня за місяць</h3><div class="chips">${mv.map(m=>`<span class="chip ${m.lift>=1.5?"hot":""}">${esc(m.k)} ×${m.lift.toFixed(2).replace(".",",")}</span>`).join("")}</div>
+<p style="font-size:13px">${hot.length?`Помітно відхилилися (від ×1,5): ${hot.map(m=>esc(m.k)).join(", ")}. `:""}Зсуви до ×1,3 — звичайні: сезон, погода, день тижня.</p></div>`;
 
 // ---- шари ----
 const wikiDays=S.wiki_last;
