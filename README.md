@@ -26,7 +26,7 @@ Telegram має величезний, але рівний обсяг, тож у 
 Шар 1 за 28.11.2024–17.05.2026: `data/archive/googletrendarchive_UA.ndjson` — 27 031 епізод UA, вирізаний із
 GoogleTrendArchive (Aleksandra Urman, Anikó Hannák, Joachim Baumann; arXiv 2603.21871; HF doi 10.57967/hf/7531; **CC BY 4.0**).
 Не склеювати з живим рядом без поправки: архів бере медіану 51 тренд/добу проти 158 у живому i0OFE,
-категорій не має, прогалини у вересні 2025 і січні 2026, квітень 2026 подвоєний (імовірні дублі).
+категорій не має, прогалини у вересні 2025 і січні 2026, квітень 2026 подвоєний — не дублі, окремі епізоди (напр. щоденна «хвилина мовчання» о 09:00), архів тоді брав більше.
 18.05–03.09.2026 не відновлюється нічим.
 Telegram в архіві трендував 13 разів за 17 міс. (макс. 5000+ — 19.07.2025, 11.03.2026), Дуров — 5. Шар 4 добирається: `python3 collect_wiki.py 2024-11-28 2026-09-10`.
 
@@ -36,3 +36,10 @@ Telegram в архіві трендував 13 разів за 17 міс. (ма�
 ## Журнал
 
 `data/log.ndjson` — кожен запуск кожного шару: хто (actions/laptop), статус (ok/partial/throttled/error), скільки.
+
+## Зіставлення шарів
+
+`analysis/` — `fetch_history.py` (поденний пошук Telegram/YouTube, 3 вікна), `telegram_spikes.py`, `compare.py`
+(тренди × сплески читання), `assemble.py` → `out/page_data.json`, `build_page.py` → `index.html`.
+Сторінка: https://claude.ai/code/artifact/461a3027-c1f3-4dc2-9b68-e8ea437bfd93
+Перезбір: `python3 analysis/compare.py && python3 analysis/telegram_spikes.py && python3 analysis/assemble.py && python3 analysis/build_page.py`

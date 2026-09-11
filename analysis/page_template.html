@@ -1,0 +1,296 @@
+<title>Чотири шари уваги</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f4f5f2; --surface:#fcfcfa; --ink:#12151a; --ink2:#4a505a; --muted:#7c818a;
+  --grid:#e3e4df; --axis:#c6c8c1; --rule:rgba(18,21,26,.10); --accent:#b4471c;
+  --search:#2a78d6; --read:#eb6834; --both:#1baf7a; --trend:#4a3aa7; --level:#12151a; --band:rgba(42,120,214,.10);
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#101214; --surface:#16191c; --ink:#eef0f2; --ink2:#b8bdc4; --muted:#8a9099;
+    --grid:#24282c; --axis:#383d43; --rule:rgba(255,255,255,.10); --accent:#e8784a;
+    --search:#3987e5; --read:#d95926; --both:#199e70; --trend:#9085e9; --level:#eef0f2; --band:rgba(57,135,229,.16);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#101214; --surface:#16191c; --ink:#eef0f2; --ink2:#b8bdc4; --muted:#8a9099;
+  --grid:#24282c; --axis:#383d43; --rule:rgba(255,255,255,.10); --accent:#e8784a;
+  --search:#3987e5; --read:#d95926; --both:#199e70; --trend:#9085e9; --level:#eef0f2; --band:rgba(57,135,229,.16);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.page{max-width:1120px;margin:0 auto;padding:40px 24px 64px;display:grid;gap:40px}
+header{display:grid;gap:14px;max-width:780px}
+.eyebrow{margin:0;font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{margin:0;font:700 clamp(28px,5vw,46px)/1.08 var(--display);letter-spacing:-.01em;text-wrap:balance}
+h2{margin:0;font:500 clamp(19px,2.6vw,24px)/1.25 var(--display);letter-spacing:-.005em;text-wrap:balance}
+h3{margin:0;font:600 14px/1.3 var(--sans)}
+.lede{margin:0;font-size:18px;color:var(--ink2);max-width:66ch}
+p{margin:0;max-width:66ch;color:var(--ink2)}
+p b,li b{color:var(--ink);font-weight:600}
+.layers{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.layers div{padding:14px 16px 14px 0;display:grid;gap:2px;align-content:start}
+.layers div+div{padding-left:16px;border-left:1px solid var(--rule)}
+.layers .k{font:500 11px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.layers .v{font:600 22px/1.15 var(--sans)}
+.layers .d{font-size:13px;color:var(--ink2);line-height:1.4}
+section.block{display:grid;gap:16px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:18px 18px 12px}
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--mono);font-size:11.5px;fill:var(--muted)}
+.chart .lbl{font-family:var(--sans);font-size:12.5px;fill:var(--ink2)}
+.chart .val{font-family:var(--sans);font-size:13px;font-weight:600;fill:var(--ink)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 20px;margin:0 0 8px;padding:0;list-style:none;font-size:13px;color:var(--ink2)}
+.legend li{display:flex;align-items:center;gap:7px}
+.tip{position:absolute;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--rule);box-shadow:0 6px 24px rgba(0,0,0,.14);
+  border-radius:8px;padding:9px 11px;font-size:13px;line-height:1.4;max-width:280px;z-index:2}
+.tip b{font-weight:600}
+.tip .m{color:var(--muted);font-size:12px}
+.nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.num{display:grid;gap:2px}
+.num b{font:600 30px/1.1 var(--sans)}
+.num span{font-size:13.5px;color:var(--ink2);line-height:1.4}
+.lists{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.lists section{display:grid;gap:8px;align-content:start}
+.lists h3{display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.lists ol{margin:0;padding:0;list-style:none;display:grid;gap:7px;font-size:13.5px}
+.lists li{display:grid;gap:1px;padding-bottom:7px;border-bottom:1px solid var(--grid)}
+.lists li .t{color:var(--ink)}
+.lists li .m{color:var(--muted);font:12px/1.3 var(--mono)}
+.rec{font-size:13.5px;color:var(--ink2)}
+.rec span{display:inline-block;font:12.5px/1 var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:4px;padding:4px 6px;margin:0 4px 6px 0}
+.rows{display:grid;gap:0}
+.row{display:grid;grid-template-columns:150px 1fr 190px;gap:14px;align-items:center;padding:7px 0;border-bottom:1px solid var(--grid)}
+.row .n{font-size:14px;font-weight:500}
+.row .n small{display:block;font:11.5px/1.3 var(--mono);color:var(--muted);font-weight:400}
+.row .bar{position:relative;height:14px}
+.row .bar i{position:absolute;left:0;top:3px;height:8px;border-radius:0 4px 4px 0;background:var(--search)}
+.row .bar em{position:absolute;top:-2px;font:600 12.5px/18px var(--sans);font-style:normal;color:var(--ink)}
+.row svg{display:block;width:100%;height:30px}
+.cat .row{grid-template-columns:150px 1fr 38%}
+.cat .row .ex{font-size:12.5px;color:var(--ink2);line-height:1.35}
+.fail{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.fail li{display:grid;grid-template-columns:120px 1fr;gap:16px;padding:10px 0;border-top:1px solid var(--rule)}
+.fail .s{font:500 11px/1.4 var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--accent)}
+.fail .s.ok{color:var(--both)}
+footer{font-size:13px;color:var(--muted);display:grid;gap:6px;max-width:84ch}
+@media (max-width:760px){
+  .page{padding:28px 16px 48px;gap:32px}
+  .layers{grid-template-columns:1fr 1fr}
+  .layers div:nth-child(3){padding-left:0;border-left:0}
+  .layers div:nth-child(n+3){border-top:1px solid var(--rule)}
+  .lists{grid-template-columns:1fr}
+  .row{grid-template-columns:110px 1fr 110px;gap:10px}
+  .cat .row{grid-template-columns:110px 1fr}
+  .cat .row .ex{grid-column:1/-1}
+  .fail li{grid-template-columns:1fr;gap:4px}
+  .card{padding:14px 12px 8px}
+}
+</style>
+
+<main class="page">
+  <header>
+    <p class="eyebrow">Україна · листопад 2024 — вересень 2026 · зібрано <span id="built"></span></p>
+    <h1>Чотири шари уваги</h1>
+    <p class="lede">Що раптом шукають, що шукають завжди і що читають — це три різні виміри, а не три шкали одного. Нижче вони поставлені поруч на тих самих днях. Найбільше розходяться там, де здається, що мали б збігатися.</p>
+  </header>
+
+  <div class="layers" id="layers"></div>
+
+  <section class="block">
+    <h2>Сплеск не є рівнем</h2>
+    <p id="tgText"></p>
+    <div class="card"><ul class="legend" id="tgLegend"></ul><div class="chart" id="tgChart"><div class="tip" hidden></div></div></div>
+  </section>
+
+  <section class="block">
+    <h2>Пошук і читання розходяться</h2>
+    <p id="svrText"></p>
+    <div class="nums" id="svrNums"></div>
+    <div class="card"><div class="chart" id="echoChart"><div class="tip" hidden></div></div></div>
+    <div class="lists" id="lists"></div>
+    <p class="rec" id="rec"></p>
+  </section>
+
+  <section class="block cat">
+    <h2>Чим зайнятий тиждень</h2>
+    <p id="catText"></p>
+    <div class="card"><div class="rows" id="cats"></div></div>
+  </section>
+
+  <section class="block">
+    <h2>Рівень, який ніколи не трендує</h2>
+    <p id="panelText"></p>
+    <div class="card"><div class="rows" id="panel"></div></div>
+  </section>
+
+  <section class="block">
+    <h2>Що не витримало перевірки</h2>
+    <ul class="fail" id="fail"></ul>
+  </section>
+
+  <footer>
+    <div>Сплески: Google Trending Now по Україні — архів GoogleTrendArchive (Urman, Hannák, Baumann; CC BY 4.0) до 17.05.2026 і власний збір з 04.09.2026. Рівень: Google Trends Explore. Читання: Вікімедіа, топ-1000 статей української Вікіпедії за добу.</div>
+    <div>Збір щодня, код і дані: <a href="https://github.com/4udaking/ua-attention" target="_blank" rel="noopener">github.com/4udaking/ua-attention</a>. Між 18.05 і 03.09.2026 трендів немає ні в кого — Google не зберігає їх довше 7 діб.</div>
+  </footer>
+</main>
+
+<script>
+const DATA = /*__DATA__*/null;
+(function(){
+const NS="http://www.w3.org/2000/svg";
+const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;};
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const MON=["січ.","лют.","бер.","квіт.","трав.","черв.","лип.","серп.","вер.","жовт.","лист.","груд."];
+const fd=s=>{const[y,m,d]=s.split("-").map(Number);return `${d} ${MON[m-1]} ${y}`;};
+const fmt=n=>n.toLocaleString("uk-UA");
+const pct=(a,b)=>Math.round(100*a/b);
+const vb=v=>v>=1000?(v/1000).toLocaleString("uk-UA")+" тис.+":v+"+";
+const T=DATA.telegram, S=DATA.svr;
+document.getElementById("built").textContent=DATA.built.slice(0,10).split("-").reverse().join(".");
+
+// ---- шари ----
+const wikiDays=S.wiki_last;
+document.getElementById("layers").innerHTML=[
+  ["Сплески","Trending Now",fmt(S.n_trends)+" трендів","що раптом почали шукати; архів до 17.05.2026 + живий збір"],
+  ["Рівень","Explore",T.series.length+" діб","поденний пошук Telegram відносно YouTube; панель 14 платформ за 90 діб"],
+  ["Топ обсягу","Explore","15 категорій","що шукають найбільше за тиждень — накопичується з 11.09.2026"],
+  ["Читання","Вікіпедія",fmt(S.n_surges)+" сплесків","нові статті в топ-100 доби, без календарних"]
+].map(([k,s,v,d])=>`<div><span class="k">${k} · ${s}</span><span class="v">${v}</span><span class="d">${d}</span></div>`).join("");
+
+// ---- Telegram ----
+const eps=T.episodes.filter(e=>e.lift!=null);
+const lifts=T.series.filter(r=>r[2]>0).map(r=>r[1]/r[2]).sort((a,b)=>a-b);
+const q=p=>lifts[Math.floor(p*(lifts.length-1))];
+const q05=q(.05),q95=q(.95),mean=eps.reduce((a,e)=>a+e.lift,0)/eps.length,maxE=Math.max(...eps.map(e=>e.lift));
+const big=eps.filter(e=>e.vol>=2000).length;
+document.getElementById("tgText").innerHTML=`За ${T.series.length} діб Telegram і Дуров <b>${eps.length} разів</b> потрапляли в тренди Google, ${big} з них — з обсягом від 2 тис. пошуків. На поденному рівні пошуку жоден із цих днів не виділяється: у середньому <b>${mean.toFixed(2).replace(".",",")}×</b> від звичайного, найбільше ${maxE.toFixed(2).replace(".",",")}×, тоді як звичайні коливання між днями — від ${q05.toFixed(2).replace(".",",")}× до ${q95.toFixed(2).replace(".",",")}×. Тренд Google ловить сплеск у межах годин — збій, новину про Дурова — і він тоне в добовому обсязі. Рівень рухають сезони: вересневі піки видно в обох роках.`;
+document.getElementById("tgLegend").innerHTML=`<li><svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="var(--level)" stroke-width="2"/></svg>пошук Telegram, % від YouTube того ж дня</li><li><svg width="22" height="10"><rect x="0" y="0" width="22" height="10" fill="var(--band)"/></svg>звичайний діапазон (5–95% днів) навколо медіани 28 діб</li><li><svg width="22" height="12"><circle cx="11" cy="6" r="4.5" fill="var(--trend)"/></svg>тренд Google про Telegram чи Дурова</li>`;
+
+function tgDraw(){
+  const host=document.getElementById("tgChart"),tip=host.querySelector(".tip");
+  host.querySelector("svg")?.remove();
+  const W=Math.max(320,host.clientWidth),wide=W>=640,m={t:14,l:40,r:12,b:26},H=wide?300:240;
+  const days=T.series.map(r=>r[0]),n=days.length;
+  const X=i=>m.l+i/(n-1)*(W-m.l-m.r);
+  const vals=T.series.map(r=>r[1]),ymax=Math.ceil(Math.max(...vals)*10)/10+0.05,ymin=Math.max(0,Math.floor(Math.min(...vals)*10)/10-0.05);
+  const Y=v=>m.t+(H-m.t-m.b)*(1-(v-ymin)/(ymax-ymin));
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Поденний пошук Telegram відносно YouTube і тренди Google про Telegram"});
+  host.insertBefore(svg,tip);
+  for(let v=Math.ceil(ymin*10)/10;v<=ymax;v+=0.1){v=Math.round(v*10)/10;
+    el("line",{x1:m.l,x2:W-m.r,y1:Y(v),y2:Y(v),stroke:"var(--grid)"},svg);
+    el("text",{x:m.l-6,y:Y(v)+4,"text-anchor":"end"},svg).textContent=Math.round(v*100)+"%";}
+  let lastM="";days.forEach((d,i)=>{const mm=d.slice(0,7);if(mm!==lastM&&d.slice(8)<="07"){lastM=mm;const mo=+d.slice(5,7);
+    if(mo===1||(wide&&mo%3===1)){el("line",{x1:X(i),x2:X(i),y1:H-m.b,y2:H-m.b+4,stroke:"var(--axis)"},svg);
+      el("text",{x:X(i),y:H-8,"text-anchor":"middle"},svg).textContent=(mo===1?d.slice(0,4):MON[mo-1]);}}});
+  // смуга звичайного діапазону
+  let up="",dn="";T.series.forEach((r,i)=>{if(r[2]>0){up+=(up?"L":"M")+X(i)+","+Y(r[2]*q95);}});
+  for(let i=n-1;i>=0;i--){const r=T.series[i];if(r[2]>0)dn+="L"+X(i)+","+Y(r[2]*q05);}
+  el("path",{d:up+dn+"Z",fill:"var(--band)"},svg);
+  // архівні прогалини трендів
+  const gap=(a,b)=>{const i=days.indexOf(a),j=days.indexOf(b);if(i<0||j<0)return;el("rect",{x:X(i),y:m.t,width:X(j)-X(i),height:H-m.t-m.b,fill:"var(--grid)",opacity:.55},svg);};
+  gap("2026-05-18","2026-09-03");
+  el("text",{x:(X(days.indexOf("2026-05-18"))+X(days.indexOf("2026-09-03")))/2,y:m.t+14,"text-anchor":"middle",class:"lbl"},svg).textContent=wide?"трендів немає":"";
+  let d="";vals.forEach((v,i)=>d+=(i?"L":"M")+X(i).toFixed(1)+","+Y(v).toFixed(1));
+  el("path",{d,fill:"none",stroke:"var(--level)","stroke-width":1.5,"stroke-linejoin":"round"},svg);
+  const epPts=eps.map(e=>{const i=days.indexOf(e.day);return i<0?null:{e,x:X(i),y:Y(vals[i])};}).filter(Boolean);
+  epPts.forEach(p=>el("circle",{cx:p.x,cy:p.y,r:p.e.vol>=2000?5.5:4,fill:"var(--trend)",stroke:"var(--surface)","stroke-width":2},svg));
+  const hit=el("rect",{x:m.l,y:0,width:W-m.l-m.r,height:H,fill:"transparent"},svg);
+  const cross=el("line",{y1:m.t,y2:H-m.b,stroke:"var(--ink2)",visibility:"hidden"},svg);
+  hit.addEventListener("pointermove",ev=>{const r=svg.getBoundingClientRect(),k=W/r.width,mx=(ev.clientX-r.left)*k;
+    const i=Math.max(0,Math.min(n-1,Math.round((mx-m.l)/(W-m.l-m.r)*(n-1))));
+    const near=epPts.find(p=>Math.abs(p.x-mx)<8);const row=T.series[i];
+    cross.setAttribute("x1",X(i));cross.setAttribute("x2",X(i));cross.setAttribute("visibility","visible");
+    tip.innerHTML=near?`<b>${esc(near.e.title)}</b> · ${vb(near.e.vol)}<div class="m">${fd(near.e.day)} · рівень дня ${near.e.lift.toFixed(2).replace(".",",")}× від медіани</div>`
+      :`<b>${Math.round(row[1]*100)}%</b> від YouTube<div class="m">${fd(row[0])}${row[2]?` · медіана 28 діб ${Math.round(row[2]*100)}%`:""}</div>`;
+    tip.hidden=false;const s=host.clientWidth/W;let lx=X(i)*s+12;if(lx+tip.offsetWidth>host.clientWidth)lx=X(i)*s-tip.offsetWidth-12;tip.style.left=lx+"px";tip.style.top="8px";});
+  hit.addEventListener("pointerleave",()=>{tip.hidden=true;cross.setAttribute("visibility","hidden");});
+}
+
+// ---- пошук проти читання ----
+const shareRead=pct(S.surges_with_trend,S.n_surges);
+const ev=S.echo_by_volume, big10=ev.filter(r=>r[0]>=10000).reduce((a,r)=>[a[0]+r[1],a[1]+r[2]],[0,0]);
+const allE=ev.reduce((a,r)=>[a[0]+r[1],a[1]+r[2]],[0,0]);
+const small=ev.filter(r=>r[0]<=200).reduce((a,r)=>[a[0]+r[1],a[1]+r[2]],[0,0]);
+document.getElementById("svrText").innerHTML=`Сплеск читання — стаття, що за добу вийшла в топ-100 української Вікіпедії, хоча тиждень до того її там майже не було. Збіг — тренд Google, у запитах якого є назва статті, стартом у межах доби. Лише <b>${shareRead}%</b> сплесків читання мають пару в пошуку, і лише <b>${pct(allE[1],allE[0])}%</b> трендів — пару в читанні. Що більший тренд, то частіше в нього є відлуння: люди йдуть читати про людей, смерті, закони й зброю, але не про матчі чи погоду.`;
+document.getElementById("svrNums").innerHTML=[
+  [shareRead+"%",`сплесків читання мають тренд у Google (${fmt(S.surges_with_trend)} з ${fmt(S.n_surges)})`],
+  [pct(small[1],small[0])+"%",`трендів «100+» і «200+» мають відлуння у Вікіпедії`],
+  [pct(big10[1],big10[0])+"%",`трендів від 10 тис. пошуків мають відлуння (${fmt(big10[1])} з ${fmt(big10[0])})`]
+].map(([b,s])=>`<div class="num"><b>${b}</b><span>${s}</span></div>`).join("");
+
+function echoDraw(){
+  const host=document.getElementById("echoChart"),tip=host.querySelector(".tip");host.querySelector("svg")?.remove();
+  const W=Math.max(320,host.clientWidth),H=220,m={t:22,l:36,r:8,b:40};
+  const bw=(W-m.l-m.r)/ev.length, Y=v=>m.t+(H-m.t-m.b)*(1-v/50);
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Частка трендів з відлунням у Вікіпедії за обсягом тренду"});host.insertBefore(svg,tip);
+  [0,10,20,30,40,50].forEach(v=>{el("line",{x1:m.l,x2:W-m.r,y1:Y(v),y2:Y(v),stroke:v?"var(--grid)":"var(--axis)"},svg);el("text",{x:m.l-6,y:Y(v)+4,"text-anchor":"end"},svg).textContent=v+"%";});
+  ev.forEach(([v,n,k],i)=>{const p=100*k/n,x=m.l+i*bw+bw/2,w=Math.min(24,bw*.6),y=Y(Math.min(p,50));
+    el("path",{d:`M${x-w/2},${Y(0)}V${y+4}a4,4 0 0 1 4,-4h${w-8}a4,4 0 0 1 4,4V${Y(0)}Z`,fill:"var(--both)"},svg);
+    el("text",{x,y:y-6,"text-anchor":"middle",class:"val"},svg).textContent=Math.round(p)+"%";
+    el("text",{x,y:H-m.b+16,"text-anchor":"middle"},svg).textContent=v>=1000?(v/1000)+"т+":v+"+";
+    el("text",{x,y:H-m.b+30,"text-anchor":"middle",style:"font-size:10.5px"},svg).textContent=W>560?"n="+fmt(n):"";
+    const hr=el("rect",{x:m.l+i*bw,y:m.t,width:bw,height:H-m.t-m.b,fill:"transparent"},svg);
+    hr.addEventListener("pointerenter",()=>{tip.innerHTML=`<b>${vb(v)}</b> пошуків<div class="m">${fmt(k)} з ${fmt(n)} трендів мали сплеск читання тієї ж доби ±1</div>`;tip.hidden=false;
+      const s=host.clientWidth/W;tip.style.left=Math.min(host.clientWidth-tip.offsetWidth,Math.max(0,x*s-tip.offsetWidth/2))+"px";tip.style.top=(y*s-60)+"px";});
+    hr.addEventListener("pointerleave",()=>tip.hidden=true);});
+  el("text",{x:m.l,y:12,class:"lbl"},svg).textContent="Частка трендів із відлунням у Вікіпедії — за обсягом тренду (без запитів російською)";
+}
+
+const li=(t,m)=>`<li><span class="t">${esc(t)}</span><span class="m">${m}</span></li>`;
+document.getElementById("lists").innerHTML=`
+<section><h3><span class="dot" style="background:var(--both)"></span>В обох шарах</h3><ol>${S.both.slice(0,10).map(x=>li(x.article,`${fd(x.day)} · ${fmt(x.views)} перегл. · «${esc(x.trend.title)}» ${vb(x.trend.vol)}`)).join("")}</ol></section>
+<section><h3><span class="dot" style="background:var(--read)"></span>Лише читання</h3><ol>${S.only_read.filter(x=>x.desktop_share<0.4).slice(0,10).map(x=>li(x.article,`${fd(x.day)} · ${fmt(x.views)} перегл.`)).join("")}</ol></section>
+<section><h3><span class="dot" style="background:var(--search)"></span>Лише пошук</h3><ol>${S.only_search.slice(0,10).map(x=>li(x.title,`${fd(x.day)} · ${vb(x.vol)}`)).join("")}</ol></section>`;
+document.getElementById("rec").innerHTML=`Окремо — запити, що трендують знову й знову, як утиліти: ${S.recurring.map(([t,n])=>`<span>${esc(t)} ×${n}</span>`).join("")}`;
+
+// ---- категорії ----
+const C=DATA.cats, cv=C.reduce((a,c)=>a+c.vol,0), cn=C.reduce((a,c)=>a+c.n,0), cmax=Math.max(...C.map(c=>c.vol));
+document.getElementById("catText").innerHTML=`Категорії ставить сам Google, автоматично й не завжди влучно. Вони є лише в живому збирачі, тож це один тиждень, ${fd(DATA.week[0])} — ${fd(DATA.week[1])}: ${fmt(cn)} трендів. Смуга — частка сумарного обсягу, праворуч найбільші теми категорії.`;
+document.getElementById("cats").innerHTML=C.filter(c=>c.vol/cv>=0.003).map(c=>`<div class="row"><div class="n">${esc(c.name)}<small>${c.n} трендів</small></div>
+<div class="bar"><i style="width:${(c.vol/cmax*78).toFixed(1)}%"></i><em style="left:calc(${(c.vol/cmax*78).toFixed(1)}% + 6px)">${Math.round(100*c.vol/cv)}%</em></div>
+<div class="ex">${c.top.slice(0,3).map(esc).join(" · ")}</div></div>`).join("");
+
+// ---- панель ----
+const P=DATA.panel, rows=Object.entries(P).map(([k,s])=>{const f=s.filter(r=>!r[2]&&r[1]!=null);const last=f.slice(-28);
+  return {k,s:f,avg:last.reduce((a,r)=>a+r[1],0)/last.length};}).sort((a,b)=>b.avg-a.avg);
+// лінійна шкала за другим за величиною; «погода» (у рази більша) обрізана по краю з позначкою
+const amax=[...rows.map(r=>r.avg)].sort((a,b)=>b-a)[1];
+const bw=r=>Math.min(1,r.avg/amax)*78;
+document.getElementById("panelText").innerHTML=`Постійний обсяг пошуку за останні 28 діб, у відсотках від YouTube; «погода» вчетверо більша за YouTube, її смуга обрізана. Праворуч — 90 діб поденно, кожен рядок у власному масштабі: видно форму, а не рівень. Це платформи й сервіси, що майже ніколи не трендують, бо шукають їх рівно й щодня. Знімок ${fd(DATA.panel_snapshot)}; Монобанк у панелі з 12.09.2026 — попередня тема Google давала рівні нулі.`;
+const ph=document.getElementById("panel");
+ph.innerHTML=rows.map((r,i)=>`<div class="row"><div class="n">${esc(r.k)}</div>
+<div class="bar"><i style="width:${bw(r).toFixed(1)}%;background:var(--search)"></i><em style="left:calc(${bw(r).toFixed(1)}% + 6px)">${r.avg>amax?"≫ ":""}${r.avg>=0.095?Math.round(r.avg*100):(r.avg*100).toFixed(1).replace(".",",")}%</em></div>
+<svg data-i="${i}" viewBox="0 0 190 30" preserveAspectRatio="none" role="img" aria-label="${esc(r.k)}, 90 діб"></svg></div>`).join("");
+ph.querySelectorAll("svg").forEach(sv=>{const r=rows[+sv.dataset.i],v=r.s.map(x=>x[1]),mx=Math.max(...v),mn=Math.min(...v),n=v.length;
+  let d="";v.forEach((y,j)=>d+=(j?"L":"M")+(j/(n-1)*188+1).toFixed(1)+","+(28-(mx>mn?(y-mn)/(mx-mn):.5)*26).toFixed(1));
+  el("path",{d,fill:"none",stroke:"var(--ink2)","stroke-width":1.3,"vector-effect":"non-scaling-stroke"},sv);});
+
+// ---- що не витримало ----
+document.getElementById("fail").innerHTML=[
+ ["відкинуто","Мова: Google проти Вікіпедії","Хотів порівняти частку російської в трендах і в тому, що читають з України. У Вікіпедії лінія стрибала від 76% до 21%, і в лютому 2025 55% «російського читання» дала одна стаття «Яндекс» — 3,2 млн переглядів за місяць. До того ж список статей за країною скоротився з 38 до 13 на добу. Від мови лишається тільки Google: 14–19% трендів щомісяця мають суто російські літери, без руху; ще ~60% запитів мовою не визначаються."],
+ ["відкинуто","Боти серед сплесків читання","Підозрював, що «ADAM» чи «Туберкульозний менінгіт» — автоматичний трафік. Перевірка частки десктопу: 3–26%, тобто читали з телефонів. Лишається лише «Casibom» (47% десктопу, казино) — його прибрано зі списку."],
+ ["поправлено","Календарні статті","Статті-дати («25 березня») сплескують щодня й чіплялися до трендів з іншими числами. Вони виключені з сплесків — це розклад, а не подія."],
+ ["межа методу","Запити російською","Тренд російською не знайде українську назву статті: «Третя світова війна» (202 тис. переглядів 10.09.2025) пари не має, хоч, імовірно, її шукали. Тому частки відлуння рахуються лише для українських і невизначених запитів."],
+ ["межа джерела","Архів неповний","Архів трендів бере ~51 тренд на добу проти ~150 у власному збирачі, має діри у вересні 2025 і січні 2026. Подвоєний квітень 2026 — не дублі: окремі епізоди, як щоденна «хвилина мовчання» о 09:00."],
+ ["витримало","Тренд Telegram ≠ стрибок рівня","17 епізодів, жоден не вийшов за звичайний діапазон добових коливань, хоча ряд здатен показати ±30% (вересневі піки видно)."]
+].map(([s,h,t])=>`<li><span class="s ${s==="витримало"?"ok":""}">${s}</span><div><h3>${h}</h3><p>${t}</p></div></li>`).join("");
+
+const drawAll=()=>{tgDraw();echoDraw();};
+drawAll();let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(drawAll,80);}).observe(document.querySelector(".page"));
+})();
+</script>

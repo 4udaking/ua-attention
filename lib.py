@@ -17,6 +17,15 @@ BROWSER_UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.3
 # Вікімедіа вимагає впізнаваний UA з контактом, браузерний їй не підходить.
 WIKI_UA = "ua-attention/0.1 (daily attention tracker; boykojunior@gmail.com)"
 RUNNER = os.environ.get("UA_ATT_RUNNER", "laptop")
+
+# IPv6 з ноутбука не працює, а urllib (на відміну від curl) спершу чекає на нього весь тайм-аут:
+# кожен запит до wikimedia.org тривав рівно timeout секунд. Беремо лише IPv4-адреси.
+_orig_gai = socket.getaddrinfo
+def _gai_v4(host, port, family=0, *a, **kw):
+    res = _orig_gai(host, port, family, *a, **kw)
+    v4 = [r for r in res if r[0] == socket.AF_INET]
+    return v4 or res
+socket.getaddrinfo = _gai_v4
 # Explore без cookie NID відповідає 429 навіть на перший запит, з cookie — 200 (перевірено 11.09.2026).
 _JAR = http.cookiejar.CookieJar()
 _OPENER = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(_JAR))
