@@ -75,7 +75,7 @@ for t in trends:
     t["script"] = script(" ".join(t["queries"]))
     t["qtoks"] = [set(stem(x) for x in toks(q)) for q in t["queries"]]
 
-print("тренди завантажено", len(trends), flush=True)
+print("тренди", len(trends), flush=True)
 # ---------- Вікіпедія ----------
 wiki = {}
 for p in sorted((D / "wiki" / "uk").glob("*.json")):
@@ -190,11 +190,28 @@ for i in only_search:
 import random
 random.seed(7)
 res["_sample_matches"] = [[s["day"], s["article"], [trends[i]["title"] for i in s["trends"]][:3]] for s in random.sample([s for s in S if s["trends"]], 20)]
+# ---------- доба для блоку «Вчора» ----------
+DAY = days[-1]
+dT = sorted([i for i, t in enumerate(trends) if t["day"] == DAY], key=lambda i: -trends[i]["vol"])
+seen_t = set(); day_trends = []
+for i in dT:
+    k = norm(trends[i]["title"])
+    if k in seen_t:
+        continue
+    seen_t.add(k)
+    day_trends.append({"title": trends[i]["title"], "vol": trends[i]["vol"], "cats": trends[i]["cats"],
+                       "echo": [surges[si]["article"].replace("_", " ") for si in matched_trends.get(i, [])][:2]})
+day_surges = sorted([s for s in surges if s["day"] == DAY], key=lambda s: -s["views"])
+res["day"] = {"date": DAY, "n_trends": len(dT), "has_live": bool(live_first and DAY >= live_first),
+              "trends": day_trends[:20],
+              "surges": [{"article": s["article"].replace("_", " "), "day": DAY, "views": s["views"], "rank": s["rank"],
+                          "trends": [trends[i]["title"] for i in s["trends"]][:2]} for s in day_surges[:20]],
+              "n_surges": len(day_surges), "n_match": sum(bool(s["trends"]) for s in day_surges)}
 # Автоматичний трафік: стаття, яку за добу дивляться майже лише з десктопу, — підозріла.
 import time, urllib.parse, sys
 sys.path.insert(0, str(ROOT))
 from lib import fetch, WIKI_UA
-cache_p = OUT / "access_cache.json"
+cache_p = D / "cache" / "wiki_access.json"  # у git: хмара не перепитує вже перевірене
 cache = json.loads(cache_p.read_text()) if cache_p.exists() else {}
 def access(article, day):
     k = f"{article}|{day}"
@@ -211,9 +228,8 @@ def access(article, day):
         cache[k] = v
     v = cache[k]; tot = sum(v.values()) or 1
     return round(v["desktop"] / tot, 3)
-for lst in (res["both"], res["only_read"]):
+for lst in (res["both"], res["only_read"], res["day"]["surges"]):
     for x in lst:
-        print("  доступ:", x["article"][:40], flush=True)
         x["desktop_share"] = access(x["article"], x["day"])
 cache_p.write_text(json.dumps(cache, ensure_ascii=False))
 (OUT / "search_vs_read.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")

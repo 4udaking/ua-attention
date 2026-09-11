@@ -42,13 +42,15 @@ for m in sorted(set(g) | set(w)):
 
 # ---- категорії тижня (лише живий ряд) ----
 cat_n, cat_v = collections.Counter(), collections.Counter()
-starts = [r["start"] for r in live.values()]
-for r in live.values():
+t_last = max(r["start"] for r in live.values())
+week_eps = [r for r in live.values() if r["start"] > t_last - 7 * 86400]  # ковзний тиждень
+starts = [r["start"] for r in week_eps]
+for r in week_eps:
     for c in (r["cats"] or [11]):
         cat_n[c] += 1
         cat_v[c] += r["vol"]
 top_by_cat = collections.defaultdict(list)
-for r in sorted(live.values(), key=lambda r: -r["vol"]):
+for r in sorted(week_eps, key=lambda r: -r["vol"]):
     for c in (r["cats"] or [11]):
         if len(top_by_cat[c]) < 4:
             top_by_cat[c].append(r["title"])
@@ -71,12 +73,30 @@ for k, rows in pd["batches"].items():
         panel[lab.get(i, i)] = [[dt.datetime.utcfromtimestamp(t).strftime("%Y-%m-%d"), round(v[j] / v[0], 3) if v[0] else None, part]
                                 for t, v, part in rows]
 
+# ---- «Вчора»: що росте в топі тижня і хто з платформ відхилився від звичного ----
+tops = sorted((D / "explore_top").glob("*.json"))
+et = json.loads(tops[-1].read_text(encoding="utf-8")) if tops else {}
+rising = {name: [[q, fv] for q, v, fv in et.get(f"{c}|now 7-d", {}).get("rising", [])[:10]]
+          for c, name in (("0", "Усе"), ("16", "Новини"))}
+movers = []
+for k, s in panel.items():
+    f = [r for r in s if not r[2] and r[1] is not None]
+    if len(f) < 30:
+        continue
+    # тижневий цикл сильний — база: медіана тих самих днів тижня за 4 попередні тижні
+    prev = sorted(f[-1 - 7 * w][1] for w in range(1, 5))
+    med = (prev[1] + prev[2]) / 2
+    if med > 0:
+        movers.append({"k": k, "day": f[-1][0], "v": f[-1][1], "lift": round(f[-1][1] / med, 2)})
+movers.sort(key=lambda m: -m["lift"])
+
 page = {
     "built": dt.datetime.now().strftime("%Y-%m-%d %H:%M"),
     "telegram": json.loads((OUT / "telegram.json").read_text()),
     "svr": json.loads((OUT / "search_vs_read.json").read_text()),
     "lang": lang, "cats": cats, "week": week,
     "panel": panel, "panel_snapshot": snap.stem,
+    "top_snapshot": tops[-1].stem if tops else None, "rising": rising, "movers": movers,
 }
 page["svr"].pop("_sample_matches", None)
 (OUT / "page_data.json").write_text(json.dumps(page, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

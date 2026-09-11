@@ -11,6 +11,19 @@ for w, rows in h["windows"].items():
         day = dt.datetime.utcfromtimestamp(t).strftime("%Y-%m-%d")
         if v[0] > 0 and day not in ratio:   # у перекритті беремо раннє вікно
             ratio[day] = v[1] / v[0]
+# подовження щодня: у панелі та сама пара (YouTube — якір, Telegram — перший терм), беремо повні доби після історії
+snaps = sorted((D / "panel").glob("*.json"))
+if snaps:
+    pd = json.loads(snaps[-1].read_text())
+    for k, rows in pd["batches"].items():
+        ids = k.split(",")
+        if ids[0] == "/m/09jcvs" and "/m/0zwk75g" in ids:
+            j = ids.index("/m/0zwk75g")
+            for t, v, part in rows:
+                day = dt.datetime.utcfromtimestamp(t).strftime("%Y-%m-%d")
+                if not part and v[0] > 0 and day not in ratio:
+                    ratio[day] = v[j] / v[0]
+            break
 days = sorted(ratio)
 base = {}
 for i, d in enumerate(days):
