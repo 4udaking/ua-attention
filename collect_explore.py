@@ -70,8 +70,10 @@ def collect_top(day):
 def collect_panel(day):
     p = DATA / "panel" / f"{day}.json"
     have = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {"anchor": CFG["anchor"]["id"], "batches": {}}
-    terms = CFG["terms"]
-    batches = [terms[i:i + 4] for i in range(0, len(terms), 4)]
+    # solo — терми, що значно більші за якір: у спільній пачці вони стискають решту до цілих 0–3
+    solo = [[t] for t in CFG["terms"] if t.get("solo")]
+    rest = [t for t in CFG["terms"] if not t.get("solo")]
+    batches = [rest[i:i + 4] for i in range(0, len(rest), 4)] + solo
     done = 0
     for b in batches:
         ids = [CFG["anchor"]["id"]] + [t["id"] for t in b]
