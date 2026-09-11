@@ -4,6 +4,7 @@ import http.cookiejar
 import json
 import os
 import pathlib
+import socket
 import time
 import urllib.error
 import urllib.parse
@@ -71,7 +72,7 @@ def fetch(url, data=None, headers=None, ua=BROWSER_UA, waits=(20, 60, 150), time
                 time.sleep(10)
                 continue
             raise
-        except (urllib.error.URLError, TimeoutError):
+        except (urllib.error.URLError, TimeoutError, socket.timeout):  # у 3.9 socket.timeout не TimeoutError
             if attempt < len(waits):
                 time.sleep(10)
                 continue
