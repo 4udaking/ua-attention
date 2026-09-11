@@ -64,7 +64,7 @@ def collect_top(day):
         have[k] = {"top": pick(0), "rising": pick(1)}
         write_json(p, have)  # після кожної категорії: обрив не губить зроблене
         done += 1
-    return done, len(jobs) - len(have)
+    return done, sum(f"{c}|{tf}" not in have for c, tf in jobs)
 
 
 def collect_panel(day):
@@ -75,9 +75,9 @@ def collect_panel(day):
     rest = [t for t in CFG["terms"] if not t.get("solo")]
     batches = [rest[i:i + 4] for i in range(0, len(rest), 4)] + solo
     done = 0
-    for b in batches:
-        ids = [CFG["anchor"]["id"]] + [t["id"] for t in b]
-        k = ",".join(ids)
+    need = [",".join([CFG["anchor"]["id"]] + [t["id"] for t in b]) for b in batches]
+    for b, k in zip(batches, need):
+        ids = k.split(",")
         if k in have["batches"]:
             continue
         pause()
@@ -87,7 +87,8 @@ def collect_panel(day):
         have["batches"][k] = [[int(r["time"]), r["value"], bool(r.get("isPartial"))] for r in tl]
         write_json(p, have)
         done += 1
-    return done, len(batches) - len(have["batches"])
+    # у файлі дня можуть лежати й пачки старої конфігурації — рахуємо лише потрібні
+    return done, sum(k not in have["batches"] for k in need)
 
 
 def main():
