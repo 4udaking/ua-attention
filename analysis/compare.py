@@ -73,7 +73,7 @@ for r in seen.values():
     live_first = min(live_first or day, day)
 for t in trends:
     t["script"] = script(" ".join(t["queries"]))
-    t["qtoks"] = [set(stem(x) for x in toks(q)) for q in t["queries"]]
+    t["qtoks"] = [set(toks(q)) for q in t["queries"]]  # слова запиту цілі: обрізана основа «укрнет» → «укрн» ловила «Укрнафту»
 
 print("тренди", len(trends), flush=True)
 # ---------- Вікіпедія ----------
@@ -111,16 +111,24 @@ for i, t in enumerate(trends):
 
 
 def match(key, t):
+    """Повертає сам запит із кластера тренду, у якому знайшлась назва статті (або None).
+    Кластер Google буває строкатим, тож показувати треба запит, а не назву тренду."""
     if not key:
-        return False
-    ok = lambda k, q: (k == q) if k.isdigit() else (q.startswith(k) or k.startswith(q))
-    return any(all(any(ok(k, q) for q in qs) for k in key) for qs in t["qtoks"] if qs)
+        return None
+    # Слово запиту може бути довшим за основу назви (відмінок) або коротшим лише на закінчення.
+    # 12.09.2026: без обмеження «укр» ловило «Укрнафту».
+    ok = lambda k, q: (k == q) if k.isdigit() else (q.startswith(k) or (k.startswith(q) and len(q) >= max(4, len(k) - 3)))
+    for qs, qtext in zip(t["qtoks"], t["queries"]):
+        if qs and all(any(ok(k, q) for q in qs) for k in key):
+            return qtext
+    return None
 
 
 period = (days[0], "2026-05-17")
 covered = lambda d: (period[0] <= d <= period[1]) or (live_first and d >= live_first and d <= days[-1])
 for s in surges:
-    s["trends"] = [i for n in (-1, 0, 1) for i in by_day.get(dshift(s["day"], n), []) if match(s["key"], trends[i])]
+    s["hits"] = [(i, q) for n in (-1, 0, 1) for i in by_day.get(dshift(s["day"], n), []) for q in [match(s["key"], trends[i])] if q]
+    s["trends"] = [i for i, _ in s["hits"]]
 matched_trends = collections.defaultdict(list)
 for si, s in enumerate(surges):
     for i in s["trends"]:
@@ -160,8 +168,8 @@ for s in both:
     if s["article"] in seen_a:
         continue
     seen_a.add(s["article"])
-    best = max(s["trends"], key=lambda i: trends[i]["vol"])
-    res["both"].append({"article": s["article"].replace("_", " "), "day": s["day"], "views": s["views"], "trend": tr(best)})
+    bi, bq = max(s["hits"], key=lambda h: trends[h[0]]["vol"])
+    res["both"].append({"article": s["article"].replace("_", " "), "day": s["day"], "views": s["views"], "trend": dict(tr(bi), title=bq)})
     if len(res["both"]) == 25:
         break
 only_read = sorted([s for s in S if not s["trends"]], key=lambda s: -s["views"])
@@ -205,7 +213,7 @@ day_surges = sorted([s for s in surges if s["day"] == DAY], key=lambda s: -s["vi
 res["day"] = {"date": DAY, "n_trends": len(dT), "has_live": bool(live_first and DAY >= live_first),
               "trends": day_trends[:20],
               "surges": [{"article": s["article"].replace("_", " "), "day": DAY, "views": s["views"], "rank": s["rank"],
-                          "trends": [trends[i]["title"] for i in s["trends"]][:2]} for s in day_surges[:20]],
+                          "trends": [q for _, q in s["hits"]][:2]} for s in day_surges[:20]],
               "n_surges": len(day_surges), "n_match": sum(bool(s["trends"]) for s in day_surges)}
 # Автоматичний трафік: стаття, яку за добу дивляться майже лише з десктопу, — підозріла.
 import time, urllib.parse, sys
