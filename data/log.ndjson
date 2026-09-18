@@ -163,3 +163,6 @@
 {"ts": "2026-09-18T08:25:20+03:00", "runner": "actions", "layer": "wiki", "status": "ok", "fetched": 2, "not_yet": [], "range": "2026-09-04..2026-09-17"}
 {"ts": "2026-09-18T08:25:21+03:00", "runner": "actions", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
 {"ts": "2026-09-18T08:25:21+03:00", "runner": "actions", "layer": "panel", "status": "ok", "fetched": 0, "left": 0}
+{"ts": "2026-09-18T12:44:00+03:00", "runner": "laptop", "layer": "wiki", "status": "ok", "fetched": 0, "not_yet": [], "range": "2026-09-04..2026-09-17"}
+{"ts": "2026-09-18T12:44:05+03:00", "runner": "laptop", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
+{"ts": "2026-09-18T12:44:05+03:00", "runner": "laptop", "layer": "panel", "status": "ok", "fetched": 0, "left": 0}
