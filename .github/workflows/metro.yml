@@ -1,0 +1,54 @@
+name: Метро — глибини станцій
+
+# Разовий збір, не щоденний: глибина станції не змінюється. Запускається, коли
+# змінився сам збирач, і вручну. Коміт робить GITHUB_TOKEN — себе він не перезапускає.
+on:
+  push:
+    branches: ["claude/kyiv-metro-*"]
+    paths:
+      - collect_metro.py
+      - .github/workflows/metro.yml
+  workflow_dispatch:
+
+concurrency:
+  group: ua-attention-metro
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  metro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      UA_ATT_RUNNER: actions
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Зібрати глибини з Вікіпедії
+        run: python3 collect_metro.py
+
+      - name: Що зібралося
+        run: |
+          python3 - <<'PY'
+          import json
+          d = json.load(open("data/metro/stations.json"))
+          for s in d["stations"]:
+              print(f'{s["line"]} {s["order"]:2d} {s["name"]:24s} '
+                    f'{"" if s["depth"] is None else s["depth"]:>6} {s["depth_src"] or "—":8s} '
+                    f'{s["lat"]} {s["lon"]}')
+          PY
+
+      - name: Зберегти
+        run: |
+          git config user.name "ua-attention-collector"
+          git config user.email "collector@users.noreply.github.com"
+          git add data/metro
+          if git diff --staged --quiet; then
+            echo "змін немає"
+          else
+            git commit -m "метро: глибини станцій з Вікіпедії"
+            git pull --rebase --autostash
+            git push
+          fi
