@@ -389,3 +389,7 @@
 {"ts": "2026-09-28T14:32:09+03:00", "runner": "actions", "layer": "wiki", "status": "ok", "fetched": 0, "not_yet": [], "range": "2026-09-14..2026-09-27"}
 {"ts": "2026-09-28T14:32:09+03:00", "runner": "actions", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
 {"ts": "2026-09-28T14:32:09+03:00", "runner": "actions", "layer": "panel", "status": "ok", "fetched": 0, "left": 0}
+{"ts": "2026-09-28T20:28:29+03:00", "runner": "actions", "layer": "trending", "status": "ok", "window": 478, "active": 29, "written": 68, "new": 30, "rss": 10}
+{"ts": "2026-09-28T20:28:29+03:00", "runner": "actions", "layer": "wiki", "status": "ok", "fetched": 0, "not_yet": [], "range": "2026-09-14..2026-09-27"}
+{"ts": "2026-09-28T20:28:29+03:00", "runner": "actions", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
+{"ts": "2026-09-28T20:28:29+03:00", "runner": "actions", "layer": "panel", "status": "ok", "fetched": 0, "left": 0}
