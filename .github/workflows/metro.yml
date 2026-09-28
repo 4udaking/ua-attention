@@ -26,6 +26,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Розвідка — які поля насправді в інфобоксі
+        run: |
+          python3 - <<'PY'
+          import re, collect_metro as m
+          got = m.pages(["Хрещатик (станція метро)", "Університет (станція метро)",
+                         "Позняки (станція метро)", "Славутич (станція метро)"])
+          for title, p in got.items():
+              print("=" * 70); print(title, "→", None if p is None else p["title"], p and (p["lat"], p["lon"]))
+              if not p: continue
+              head = p["text"][:2600]
+              print("--- поля інфобоксу:")
+              for f in re.findall(r"\n\s*\|\s*([^=|\n]{1,40}?)\s*=([^\n]{0,70})", head):
+                  print(f"    |{f[0]}| = {f[1]}")
+              print("--- перші рядки тексту:")
+              body = re.sub(r"^.*?\n\}\}", "", p["text"], flags=re.S)[:600]
+              print(body.replace("\n", " ")[:600])
+          PY
+
       - name: Зібрати глибини з Вікіпедії
         run: python3 collect_metro.py
 
