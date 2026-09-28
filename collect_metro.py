@@ -50,11 +50,12 @@ TRANSFERS = [
     ("Палац спорту", "Площа Українських Героїв"),
 ]
 
+# Назви полів — з інфобоксу «Станція метро» в uk.wikipedia, перевірені на живих статтях.
+# Обережно: |відкриття| — це година початку роботи станції (06:31), а не дата; дата в |дата|.
 FIELDS = {
     "depth": ("глибина закладення", "глибина"),
     "type": ("тип", "тип станції", "конструкція"),
-    "opened": ("відкрита", "дата відкриття", "відкриття", "рік відкриття"),
-    "line_wiki": ("лінія",),
+    "opened": ("дата", "дата відкриття", "відкрита"),
 }
 
 
@@ -160,6 +161,16 @@ def pages(titles):
     return out
 
 
+def is_station(p):
+    """Чи це стаття про станцію, а не сторінка-неоднозначність.
+
+    «Університет (станція метро)» — саме така: список однойменних станцій у п'яти містах,
+    без інфобоксу. Київська стаття називається «Університет (станція метро, Київ)».
+    """
+    t = p["text"]
+    return "{{disambig" not in t.lower() and re.search(r"\n\s*\|\s*лінія\s*=", t, flags=re.I) is not None
+
+
 def find_title(name):
     """Запасний шлях, якщо назва статті не вгадана: пошук у Вікіпедії."""
     d = api(action="query", list="search", srsearch=f'"{name}" станція метро Київ', srlimit=3)
@@ -167,6 +178,26 @@ def find_title(name):
         if "станція метро" in hit["title"] or name in hit["title"]:
             return hit["title"]
     return None
+
+
+def wikidata_coords(titles):
+    """Координати для статей без {{coord}}: P625 у Вікіданих. Назва → (широта, довгота).
+
+    Відповідь індексована Q-кодом, тож назву статті беремо з sitelinks тієї ж сутності.
+    """
+    out = {}
+    for i in range(0, len(titles), 40):
+        url = "https://www.wikidata.org/w/api.php?" + urllib.parse.urlencode({
+            "action": "wbgetentities", "sites": "ukwiki", "titles": "|".join(titles[i:i + 40]),
+            "props": "claims|sitelinks", "format": "json", "formatversion": "2"})
+        for e in json.loads(fetch(url, ua=WIKI_UA, waits=(5, 20))).get("entities", {}).values():
+            title = (e.get("sitelinks") or {}).get("ukwiki", {}).get("title")
+            for c in e.get("claims", {}).get("P625", []):
+                v = c.get("mainsnak", {}).get("datavalue", {}).get("value") or {}
+                if title and "latitude" in v:
+                    out[title] = (v["latitude"], v["longitude"])
+                    break
+    return out
 
 
 def main():
@@ -177,6 +208,12 @@ def main():
     stations, no_page, no_depth = [], [], []
     for lid, i, name in order:
         p = got.get(guess[name])
+        if p is not None and not is_station(p):
+            # Однойменні станції є в кількох містах, і назва без міста веде на
+            # неоднозначність — київську статтю тоді дописуємо містом.
+            t = f"{name} (станція метро, Київ)"
+            alt = pages([t]).get(t)
+            p = alt if alt and is_station(alt) else None
         if p is None:
             t = find_title(name)
             p = pages([t]).get(t) if t else None
@@ -201,9 +238,18 @@ def main():
             "opened": parse_date(field_raw(text, FIELDS["opened"])),
         })
 
+    # Частина статей не має {{coord}} — добираємо з Вікіданих.
+    need = [s["title"] for s in stations if s["lat"] is None and s["title"]]
+    if need:
+        wd = wikidata_coords(need)
+        for s in stations:
+            if s["lat"] is None and s["title"] in wd:
+                s["lat"], s["lon"] = wd[s["title"]]
+                s["coord_src"] = "wikidata"
+
     out = {
         "generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
-        "source": "uk.wikipedia.org (CC BY-SA 4.0)",
+        "source": "uk.wikipedia.org (CC BY-SA 4.0), координати подекуди з Вікіданих",
         "lines": LINES,
         "transfers": [list(t) for t in TRANSFERS],
         "stations": stations,
