@@ -8,7 +8,6 @@
   color-scheme: light;
   --bg:#f4f5f2; --surface:#fcfcfa; --ink:#12151a; --ink2:#4a505a; --muted:#7c818a;
   --grid:#e3e4df; --axis:#c6c8c1; --rule:rgba(18,21,26,.10); --accent:#b4471c;
-  --plane:rgba(18,21,26,.045); --leader:rgba(18,21,26,.22); --halo:#fcfcfa;
   --display:"Unbounded","Arial Black",system-ui,sans-serif;
   --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
@@ -18,14 +17,12 @@
     color-scheme: dark;
     --bg:#101214; --surface:#16191c; --ink:#eef0f2; --ink2:#b8bdc4; --muted:#8a9099;
     --grid:#24282c; --axis:#383d43; --rule:rgba(255,255,255,.10); --accent:#e8784a;
-    --plane:rgba(255,255,255,.05); --leader:rgba(255,255,255,.20); --halo:#16191c;
   }
 }
 :root[data-theme="dark"]{
   color-scheme: dark;
   --bg:#101214; --surface:#16191c; --ink:#eef0f2; --ink2:#b8bdc4; --muted:#8a9099;
   --grid:#24282c; --axis:#383d43; --rule:rgba(255,255,255,.10); --accent:#e8784a;
-  --plane:rgba(255,255,255,.05); --leader:rgba(255,255,255,.20); --halo:#16191c;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
@@ -36,20 +33,25 @@ header{display:grid;gap:12px;max-width:780px}
 .eyebrow{margin:0;font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 h1{margin:0;font:700 clamp(28px,5vw,46px)/1.08 var(--display);letter-spacing:-.01em;text-wrap:balance}
 h2{margin:0;font:500 clamp(18px,2.4vw,22px)/1.25 var(--display)}
-h3{margin:0;font:600 14px/1.3 var(--sans)}
 p{margin:0;max-width:66ch;color:var(--ink2)}
 .lede{margin:0;font-size:18px;color:var(--ink2);max-width:66ch}
 
 .stage{position:relative;background:var(--surface);border:1px solid var(--rule);border-radius:12px;overflow:hidden;touch-action:none}
-canvas{display:block;width:100%;height:clamp(420px,72vh,760px);cursor:grab}
-canvas.drag{cursor:grabbing}
-.bar{position:absolute;top:12px;left:12px;right:12px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
-.bar button{pointer-events:auto;font:500 13px/1 var(--sans);color:var(--ink2);background:var(--surface);
+#view{width:100%;height:clamp(440px,74vh,780px);cursor:grab}
+#view.drag{cursor:grabbing}
+#view canvas{display:block}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#labels div{position:absolute;white-space:nowrap;font:12px/1 var(--sans);color:var(--ink2);
+  transform:translate(0,-50%);text-shadow:0 0 3px var(--surface),0 0 3px var(--surface),0 0 3px var(--surface)}
+#labels div.s{color:var(--ink);font-weight:500}
+#labels div.ruler{font:11px/1 var(--mono);color:var(--muted);transform:translate(-100%,-50%)}
+.bar{position:absolute;top:12px;left:12px;right:12px;display:flex;flex-wrap:wrap;gap:6px;z-index:2}
+.bar button{font:500 13px/1 var(--sans);color:var(--ink2);background:var(--surface);
   border:1px solid var(--rule);border-radius:7px;padding:8px 11px;cursor:pointer}
 .bar button:hover{color:var(--ink)}
 .bar button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .plate{position:absolute;left:12px;bottom:12px;background:var(--surface);border:1px solid var(--rule);
-  border-radius:10px;padding:11px 13px;max-width:min(300px,calc(100% - 24px))}
+  border-radius:10px;padding:11px 13px;max-width:min(300px,calc(100% - 24px));z-index:2}
 .plate .t{font:500 15px/1.2 var(--display)}
 .plate .m{margin-top:3px;font:12px/1.45 var(--mono);color:var(--muted)}
 .tip{position:absolute;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--rule);
@@ -57,6 +59,8 @@ canvas.drag{cursor:grabbing}
 .tip b{font-weight:600}
 .tip .m{color:var(--muted);font:12px/1.4 var(--mono)}
 .tip[hidden]{display:none}
+.nowebgl{position:absolute;inset:0;display:grid;place-content:center;text-align:center;padding:24px;
+  font-size:14px;color:var(--ink2);background:var(--surface);z-index:4}
 
 .controls{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:center;font-size:13.5px;color:var(--ink2)}
 .controls label{display:flex;align-items:center;gap:8px}
@@ -72,11 +76,11 @@ canvas.drag{cursor:grabbing}
 .num span{font-size:13.5px;color:var(--ink2);line-height:1.4}
 .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:28px}
 .rank{margin:0;padding:0;list-style:none;display:grid;gap:0}
-.rank li{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--grid);font-size:14px}
+.rank li{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:6px 0;
+  border-bottom:1px solid var(--grid);font-size:14px;cursor:pointer}
 .rank .n{display:flex;align-items:center;gap:8px;min-width:0}
 .rank .n span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rank .v{font:500 13px/1 var(--mono);color:var(--ink)}
-.rank button{all:unset;cursor:pointer;display:contents}
 .rank li:hover .n span{color:var(--accent)}
 footer{border-top:1px solid var(--rule);padding-top:16px;font-size:13px;color:var(--muted);display:grid;gap:6px}
 footer a{color:var(--muted)}
@@ -100,7 +104,8 @@ footer a{color:var(--muted)}
       <button data-spin>Обертання</button>
       <button data-reset>Скинути</button>
     </div>
-    <canvas id="c"></canvas>
+    <div id="view"></div>
+    <div id="labels"></div>
     <div class="plate">
       <div class="t">Глибини київського метро</div>
       <div class="m" id="plate-m"></div>
@@ -130,309 +135,359 @@ footer a{color:var(--muted)}
 
   <footer>
     <div>Глибина закладення, координати, тип і дата відкриття — <a href="https://uk.wikipedia.org/wiki/Список_станцій_Київського_метрополітену">українська Вікіпедія</a>, CC BY-SA 4.0.
-      Порядок станцій уздовж ліній і пересадки задані в <code>collect_metro.py</code>.</div>
+      Порядок станцій уздовж ліній і пересадки задані в <code>collect_metro.py</code>. Сцена — three.js r170, MIT, лежить у репо.</div>
     <div class="warn" id="gaps"></div>
     <div>План на поверхні — не мапа міста, а тінь самих ліній: координати станцій, зведені на нульову позначку.
-      Вертикальний масштаб перебільшено, інакше 105 метрів на тлі 25 кілометрів міста — волосина.</div>
+      Перегін між станціями — плавна крива, а не справжня траса тунелю. Вертикальний масштаб перебільшено,
+      інакше 105 метрів на тлі 25 кілометрів міста — волосина.</div>
   </footer>
 </div>
 
-<script>
-const DATA = /*__DATA__*/null;
+<script type="module">
+import * as T from "./vendor/three.module.min.js";
 
+const DATA = /*__DATA__*/null;
 const LINES = DATA.lines, ST = DATA.stations;
 const byName = new Map(ST.map(s => [s.name, s]));
 const LC = Object.fromEntries(LINES.map(l => [l.id, l.color]));
 
-// Широти/довготи → метри від центру мережі. Локальний масштаб: на 50° похибка проєкції
-// на 25 км міста менша за товщину лінії, тож без справжньої картографії.
+// Широти/довготи → метри від центру мережі, далі метри → одиниці сцени (1 = 1 км).
+// На 25 км міста похибка плоскої проєкції менша за товщину труби, тож без картографії.
+const M = 0.001;
 const withGeo = ST.filter(s => s.lat != null && s.lon != null);
 const lat0 = withGeo.reduce((a, s) => a + s.lat, 0) / withGeo.length;
 const lon0 = withGeo.reduce((a, s) => a + s.lon, 0) / withGeo.length;
 for (const s of ST) {
-  if (s.lat == null || s.lon == null) { s.px = s.py = null; continue; }
-  s.px = (s.lon - lon0) * 111320 * Math.cos(lat0 * Math.PI / 180);
-  s.py = (s.lat - lat0) * 110574;
+  if (s.lat == null || s.lon == null) { s.px = s.pz = null; continue; }
+  s.px = (s.lon - lon0) * 111320 * Math.cos(lat0 * Math.PI / 180) * M;
+  s.pz = -(s.lat - lat0) * 110574 * M;   // північ — у −Z, щоб «зверху» лягало як мапа
 }
 const geo = ST.filter(s => s.px != null);
 const ext = a => [Math.min(...a), Math.max(...a)];
-const [xMin, xMax] = ext(geo.map(s => s.px)), [yMin, yMax] = ext(geo.map(s => s.py));
-const depths = ST.filter(s => s.depth != null).map(s => s.depth);
-const dMax = depths.length ? Math.max(...depths) : 100;
-
-const paths = LINES.map(l => ({
-  line: l,
-  st: ST.filter(s => s.line === l.id && s.px != null).sort((a, b) => a.order - b.order),
+const [xMin, xMax] = ext(geo.map(s => s.px)), [zMin, zMax] = ext(geo.map(s => s.pz));
+const known = ST.filter(s => s.depth != null);
+const dMax = known.length ? Math.max(...known.map(s => s.depth)) : 100;
+const order = LINES.map(l => ({
+  line: l, st: ST.filter(s => s.line === l.id && s.px != null).sort((a, b) => a.order - b.order),
 }));
-const transfers = (DATA.transfers || [])
-  .map(([a, b]) => [byName.get(a), byName.get(b)])
+const transfers = (DATA.transfers || []).map(([a, b]) => [byName.get(a), byName.get(b)])
   .filter(([a, b]) => a && b && a.px != null && b.px != null);
 
-const VIEWS = {
-  "3d":    { az: -26, el: 26 },
-  top:     { az: 0,   el: 90 },
-  cut:     { az: 0,   el: 0 },
-  bottom:  { az: -26, el: -34 },
-};
-const S = { az: -26, el: 26, kz: 80, zoom: 1, panX: 0, panY: 0, spin: false, view: "3d",
+const S = { az: 32, el: 24, kz: 100, zoom: 1, spin: false, view: "3d",
             names: false, leaders: true, hover: null, pinned: null };
-let tgt = null;  // ціль анімації переходу між ракурсами
+const VIEWS = { "3d": { az: 32, el: 24 }, top: { az: 0, el: 89.5 },
+                cut: { az: 0, el: 0 }, bottom: { az: 32, el: -32 } };
+let tgt = null;
 
-const cv = document.getElementById("c"), ctx = cv.getContext("2d");
-const tip = document.getElementById("tip");
-let W = 0, H = 0, base = 1, cx = 0, cy = 0, need = true;
+const host = document.getElementById("view"), labelBox = document.getElementById("labels"),
+      tip = document.getElementById("tip");
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+let renderer;
+try {
+  renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
+} catch (e) {
+  host.insertAdjacentHTML("afterend",
+    '<div class="nowebgl">Для цієї сцени потрібен WebGL, а браузер його не дає.</div>');
+  throw e;
+}
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+host.appendChild(renderer.domElement);
+
+const scene = new T.Scene();
+const camera = new T.PerspectiveCamera(24, 1, 0.1, 2000)   // довгий фокус: у «розрізі» перспектива майже не косить горизонт;
+scene.add(new T.HemisphereLight(0xffffff, 0x5a6068, 2.1));
+const sun = new T.DirectionalLight(0xffffff, 1.8); sun.position.set(12, 26, 10); scene.add(sun);
+const fill = new T.DirectionalLight(0xffffff, 0.5); fill.position.set(-14, -8, -12); scene.add(fill);
+
+const world = new T.Group(); scene.add(world);          // усе, що не залежить від kz
+const deepGroup = new T.Group(); world.add(deepGroup);  // усе, що тягнеться вглиб
+
+const y = s => (s.depth == null ? 0 : -s.depth) * S.kz * M;
+const col = h => new T.Color().setStyle(h);
+const dispose = g => { g.traverse(o => { o.geometry?.dispose(); o.material?.dispose(); }); g.clear(); };
+
+// ——— поверхня: сітка через 2 км і тінь ліній на нульовій позначці ———
+const PAD = 1.6;
+function buildSurface() {
+  const g = new T.Group();
+  const pts = [], gc = col(css("--grid"));
+  for (let x = Math.ceil((xMin - PAD) / 2) * 2; x <= xMax + PAD; x += 2)
+    pts.push(new T.Vector3(x, 0, zMin - PAD), new T.Vector3(x, 0, zMax + PAD));
+  for (let z = Math.ceil((zMin - PAD) / 2) * 2; z <= zMax + PAD; z += 2)
+    pts.push(new T.Vector3(xMin - PAD, 0, z), new T.Vector3(xMax + PAD, 0, z));
+  g.add(new T.LineSegments(new T.BufferGeometry().setFromPoints(pts),
+        new T.LineBasicMaterial({ color: gc, transparent: true, opacity: 0.9 })));
+  for (const p of order) {
+    const v = p.st.map(s => new T.Vector3(s.px, 0, s.pz));
+    g.add(new T.Line(new T.BufferGeometry().setFromPoints(v),
+          new T.LineBasicMaterial({ color: col(p.line.color), transparent: true, opacity: 0.32 })));
+  }
+  return g;
+}
+world.add(buildSurface());
+
+// ——— лінійка глибин у північно-західному куті ———
+const rulerTicks = new T.Group(); deepGroup.add(rulerTicks);
+const rulerLabels = [];
+function buildRuler() {
+  dispose(rulerTicks);
+  for (const l of rulerLabels) l.remove();
+  rulerLabels.length = 0;
+  const x = xMin - PAD, z = zMin - PAD, ac = col(css("--axis")), pts = [];
+  pts.push(new T.Vector3(x, 0, z), new T.Vector3(x, -dMax * S.kz * M, z));
+  for (let d = 0; d <= dMax; d += 25) {
+    const yy = -d * S.kz * M;
+    pts.push(new T.Vector3(x, yy, z), new T.Vector3(x - 0.5, yy, z));
+    const el = document.createElement("div");
+    el.className = "ruler"; el.textContent = d === 0 ? "0" : "−" + d + " м";
+    labelBox.appendChild(el);
+    rulerLabels.push(Object.assign(el, { v: new T.Vector3(x - 0.7, yy, z) }));
+  }
+  rulerTicks.add(new T.LineSegments(new T.BufferGeometry().setFromPoints(pts),
+        new T.LineBasicMaterial({ color: ac })));
+}
+
+// ——— труби ліній, кулі станцій, пунктир до поверхні, переходи ———
+const dots = [];
+function buildDeep() {
+  for (const c of [...deepGroup.children]) if (c !== rulerTicks) { dispose(c); deepGroup.remove(c); }
+  dots.length = 0;
+
+  for (const p of order) {
+    const v = p.st.map(s => new T.Vector3(s.px, y(s), s.pz));
+    if (v.length > 1) {
+      const curve = new T.CatmullRomCurve3(v, false, "catmullrom", 0.12);
+      const tube = new T.Mesh(new T.TubeGeometry(curve, v.length * 12, 0.12, 10, false),
+        new T.MeshStandardMaterial({ color: col(p.line.color), roughness: 0.42, metalness: 0.02 }));
+      deepGroup.add(tube);
+    }
+    for (const s of p.st) {
+      const hollow = s.depth == null;
+      const m = new T.Mesh(new T.SphereGeometry(hollow ? 0.15 : 0.19, 20, 14),
+        new T.MeshStandardMaterial({
+          color: hollow ? col(css("--surface")) : col(p.line.color),
+          roughness: hollow ? 0.8 : 0.35, metalness: 0.02,
+          emissive: col(p.line.color), emissiveIntensity: hollow ? 0.22 : 0.06,
+        }));
+      m.position.set(s.px, y(s), s.pz);
+      m.userData.s = s;
+      deepGroup.add(m); dots.push(m);
+    }
+  }
+
+  if (S.leaders) {
+    const pts = [];
+    for (const s of geo) if (s.depth) pts.push(new T.Vector3(s.px, 0, s.pz), new T.Vector3(s.px, y(s), s.pz));
+    if (pts.length) {
+      const ls = new T.LineSegments(new T.BufferGeometry().setFromPoints(pts),
+        new T.LineDashedMaterial({ color: col(css("--ink2")), transparent: true, opacity: 0.35,
+                                   dashSize: 0.14, gapSize: 0.16 }));
+      ls.computeLineDistances(); deepGroup.add(ls);
+    }
+  }
+
+  const tp = [];
+  for (const [a, b] of transfers) tp.push(new T.Vector3(a.px, y(a), a.pz), new T.Vector3(b.px, y(b), b.pz));
+  if (tp.length) {
+    const ls = new T.LineSegments(new T.BufferGeometry().setFromPoints(tp),
+      new T.LineDashedMaterial({ color: col(css("--ink2")), transparent: true, opacity: 0.65,
+                                 dashSize: 0.18, gapSize: 0.14 }));
+    ls.computeLineDistances(); deepGroup.add(ls);
+  }
+  buildRuler();
+}
+
+// ——— камера: орбіта навколо центру мережі ———
+const target = new T.Vector3();
+let corners = [];
+function frame() {
+  const deep = dMax * S.kz * M;
+  target.set((xMin + xMax) / 2, -deep / 2, (zMin + zMax) / 2);
+  corners = [];
+  // Вписуємо самі станції, а не габаритний ящик: глибоких станцій жменя, і порожній
+  // ящик до −105 м по всіх кутах з'їдав би третину кадру. Сітка хай тікає за край.
+  for (const s of geo) corners.push(new T.Vector3(s.px, y(s), s.pz), new T.Vector3(s.px, 0, s.pz));
+  corners.push(new T.Vector3(xMin - 1.1, 0, zMin), new T.Vector3(xMin - 1.1, -deep, zMin));
+}
+const dir = new T.Vector3(), right = new T.Vector3(), up = new T.Vector3(), rel = new T.Vector3(),
+      eye = new T.Vector3();
+// Відстань рахується з восьми кутів габариту, а не з описаної сфери: мережа — плаский
+// коржик, і сфера навколо неї лишала б половину кадру порожньою в кожному ракурсі.
+function place() {
+  const a = S.az * Math.PI / 180, e = S.el * Math.PI / 180;
+  dir.set(Math.cos(e) * Math.sin(a), Math.sin(e), Math.cos(e) * Math.cos(a));
+  right.crossVectors(new T.Vector3(0, 1, 0), dir).normalize();
+  up.crossVectors(dir, right).normalize();
+  const tanV = Math.tan(T.MathUtils.degToRad(camera.fov) / 2), tanH = tanV * camera.aspect;
+  const c = eye.copy(target);
+  let dist = 1;
+  // Три проходи: відсунутися, щоб усе влізло, — і зсунути центр, бо в перспективі
+  // середина габариту й середина кадру не збігаються. Сходиться на другому.
+  for (let it = 0; it < 3; it++) {
+    dist = 1;
+    for (const p of corners) {
+      rel.copy(p).sub(c);
+      const w = rel.dot(dir);
+      dist = Math.max(dist, Math.abs(rel.dot(right)) / tanH + w, Math.abs(rel.dot(up)) / tanV + w);
+    }
+    dist = dist * 1.03 / S.zoom;
+    let uMin = 1e9, uMax = -1e9, vMin = 1e9, vMax = -1e9;
+    for (const p of corners) {
+      rel.copy(p).sub(c);
+      const k = Math.max(dist - rel.dot(dir), 0.01);
+      const su = rel.dot(right) / (k * tanH), sv = rel.dot(up) / (k * tanV);
+      uMin = Math.min(uMin, su); uMax = Math.max(uMax, su);
+      vMin = Math.min(vMin, sv); vMax = Math.max(vMax, sv);
+    }
+    c.addScaledVector(right, (uMin + uMax) / 2 * tanH * dist)
+     .addScaledVector(up, (vMin + vMax) / 2 * tanV * dist);
+  }
+  camera.position.copy(c).addScaledVector(dir, dist);
+  camera.up.set(0, 1, 0);
+  camera.lookAt(c);
+}
 
 function resize() {
-  const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
-  W = r.width; H = r.height;
-  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  need = true;
+  const r = host.getBoundingClientRect();
+  if (!r.width) return;
+  renderer.setSize(r.width, r.height);   // зі стилями: інакше canvas лишається в піксельному розмірі й вилазить із рамки
+  camera.aspect = r.width / r.height;
+  camera.updateProjectionMatrix();
 }
 
-const rad = d => d * Math.PI / 180;
-
-function raw(x, y, z) {
-  const a = rad(S.az), e = rad(S.el);
-  const x1 = x * Math.cos(a) - y * Math.sin(a);
-  const y1 = x * Math.sin(a) + y * Math.cos(a);
-  return [x1, y1 * Math.sin(e) + z * Math.cos(e), -y1 * Math.cos(e) + z * Math.sin(e)];
+// ——— підписи: проєктуємо точки сцени в екран і розкладаємо <div> ———
+const labels = new Map();
+function labelFor(s) {
+  let el = labels.get(s);
+  if (!el) { el = document.createElement("div"); el.textContent = s.name; labelBox.appendChild(el); labels.set(s, el); }
+  return el;
 }
-
-// Кадр підганяється під ракурс: у розрізі мережа плеската, зверху — квадратна,
-// один сталий масштаб лишав би півкадру порожнечі.
-function fit() {
-  let a = Infinity, b = -Infinity, c = Infinity, d = -Infinity;
-  const pt = (x, y, z) => { const [u, v] = raw(x, y, z); a = Math.min(a, u); b = Math.max(b, u); c = Math.min(c, v); d = Math.max(d, v); };
-  for (const s of geo) { pt(s.px, s.py, 0); pt(s.px, s.py, pz(s)); }
-  pt(xMin - 1600, yMin - 1600, 0); pt(xMax + 1600, yMax + 1600, 0);
-  cx = (a + b) / 2; cy = (c + d) / 2;
-  base = Math.min((W - 130) / Math.max(b - a, 1), (H - 120) / Math.max(d - c, 1));
+const v3 = new T.Vector3();
+function toScreen(v, w, h) {
+  v3.copy(v).project(camera);
+  return { x: (v3.x * 0.5 + 0.5) * w, y: (-v3.y * 0.5 + 0.5) * h, in: v3.z < 1 };
 }
-
-function project(x, y, z) {
-  const [u, v, near] = raw(x, y, z), k = base * S.zoom;
-  return { x: W / 2 + S.panX + (u - cx) * k, y: H / 2 + S.panY - (v - cy) * k, near };
-}
-
-const pz = s => (s.depth == null ? 0 : -s.depth) * S.kz;   // глибина у «метрах плану»
-const P = s => project(s.px, s.py, pz(s));
-const Pflat = s => project(s.px, s.py, 0);
-
-function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
-
-function draw() {
-  fit();
-  const ink = css("--ink"), ink2 = css("--ink2"), muted = css("--muted"),
-        plane = css("--plane"), leader = css("--leader"), halo = css("--halo"), gridc = css("--grid");
-  ctx.clearRect(0, 0, W, H);
-  ctx.lineJoin = ctx.lineCap = "round";
-
-  // 1. Поверхня: сітка через 2 км + тінь ліній на нульовій позначці.
-  const pad = 1200;
-  ctx.strokeStyle = gridc; ctx.lineWidth = 1;
-  for (let gx = Math.ceil((xMin - pad) / 2000) * 2000; gx <= xMax + pad; gx += 2000) {
-    const a = project(gx, yMin - pad, 0), b = project(gx, yMax + pad, 0);
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-  }
-  for (let gy = Math.ceil((yMin - pad) / 2000) * 2000; gy <= yMax + pad; gy += 2000) {
-    const a = project(xMin - pad, gy, 0), b = project(xMax + pad, gy, 0);
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-  }
-  ctx.globalAlpha = 0.5; ctx.lineWidth = 2.5;
-  for (const p of paths) {
-    ctx.strokeStyle = p.line.color; ctx.beginPath();
-    p.st.forEach((s, i) => { const q = Pflat(s); i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); });
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-
-  // 2. Лінійка глибин уздовж західного краю. Згори вона вироджується в точку — ховаємо.
-  if (Math.abs(Math.cos(rad(S.el))) > 0.12) {
-    const rx = xMin - pad, ry = yMin - pad;
-    ctx.strokeStyle = css("--axis"); ctx.lineWidth = 1;
-    const top = project(rx, ry, 0), bot = project(rx, ry, -dMax * S.kz);
-    ctx.beginPath(); ctx.moveTo(top.x, top.y); ctx.lineTo(bot.x, bot.y); ctx.stroke();
-    ctx.fillStyle = muted; ctx.font = "11px " + css("--mono"); ctx.textAlign = "right"; ctx.textBaseline = "middle";
-    for (let d = 0; d <= dMax; d += 25) {
-      const q = project(rx, ry, -d * S.kz), t = project(rx - 500, ry, -d * S.kz);
-      ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(t.x, t.y); ctx.stroke();
-      ctx.fillText(d === 0 ? "0" : "−" + d + " м", t.x - 4, t.y);
-    }
-  }
-
-  // 3. Пунктир від поверхні до станції.
-  if (S.leaders) {
-    ctx.strokeStyle = leader; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
-    for (const s of geo) {
-      if (!s.depth) continue;
-      const a = Pflat(s), b = P(s);
-      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-    }
-    ctx.setLineDash([]);
-  }
-
-  // 4. Переходи між станціями-сусідками різних ліній.
-  ctx.strokeStyle = ink2; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
-  for (const [a, b] of transfers) {
-    const p = P(a), q = P(b);
-    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
-  }
-  ctx.setLineDash([]); ctx.globalAlpha = 1;
-
-  // 5. Лінії та станції — дальнє першим, щоб ближче перекривало.
-  const items = [];
-  for (const p of paths) {
-    for (let i = 0; i < p.st.length - 1; i++) {
-      const a = P(p.st[i]), b = P(p.st[i + 1]);
-      items.push({ k: "seg", near: Math.min(a.near, b.near), a, b, c: p.line.color });
-    }
-  }
-  for (const s of geo) { const q = P(s); items.push({ k: "st", near: q.near, q, s }); }
-  items.sort((u, v) => u.near - v.near);
-
-  ctx.lineWidth = 3.5;
-  for (const it of items) {
-    if (it.k === "seg") {
-      ctx.strokeStyle = it.c;
-      ctx.beginPath(); ctx.moveTo(it.a.x, it.a.y); ctx.lineTo(it.b.x, it.b.y); ctx.stroke();
-    } else {
-      const { q, s } = it, act = s === S.hover || s === S.pinned;
-      ctx.beginPath(); ctx.arc(q.x, q.y, act ? 7 : 4.6, 0, 7);
-      ctx.fillStyle = s.depth == null ? halo : LC[s.line];
-      ctx.fill();
-      ctx.lineWidth = 2; ctx.strokeStyle = s.depth == null ? LC[s.line] : halo; ctx.stroke();
-      ctx.lineWidth = 3.5;
-    }
-  }
-
-  // 6. Підписи: завжди для активної та найглибших, решта — за галочкою.
-  const drawn = [];
-  ctx.font = "12px " + css("--sans"); ctx.textAlign = "left"; ctx.textBaseline = "middle";
-  const hits = b => drawn.some(o => b[0] < o[0] + o[2] && o[0] < b[0] + b[2] &&
-                                    b[1] < o[1] + o[3] && o[1] < b[1] + b[3]);
-  const label = (s, strong, always) => {
-    const q = P(s), t = s.name, w = ctx.measureText(t).width;
-    // Чотири місця на вибір: праворуч, ліворуч, під, над. Купчаться лише в центрі міста.
-    const spots = [[10, 0], [-w - 10, 0], [-w / 2, 15], [-w / 2, -15]];
-    let put = null;
-    for (const [dx, dy] of spots) {
-      const box = [q.x + dx - 3, q.y + dy - 8, w + 6, 16];
-      if (always || !hits(box)) { put = [q.x + dx, q.y + dy, box]; break; }
-    }
-    if (!put) return;
-    drawn.push(put[2]);
-    ctx.lineWidth = 3; ctx.strokeStyle = halo; ctx.strokeText(t, put[0], put[1]);
-    ctx.fillStyle = strong ? ink : ink2; ctx.fillText(t, put[0], put[1]);
-    ctx.lineWidth = 3.5;
+const deepTop = [...geo].filter(s => s.depth != null).sort((a, b) => b.depth - a.depth).slice(0, 5);
+function drawLabels() {
+  const r = host.getBoundingClientRect(), boxes = [];
+  const wanted = new Set([...deepTop, ...(S.names ? geo : []), S.pinned, S.hover].filter(Boolean));
+  for (const [s, el] of labels) if (!wanted.has(s)) el.style.display = "none";
+  const put = (s, strong, always) => {
+    const el = labelFor(s), p = toScreen(new T.Vector3(s.px, y(s), s.pz), r.width, r.height);
+    el.className = strong ? "s" : "";
+    // 46 px згори — смуга кнопок: підпис, що туди заліз, читається як частина кнопки.
+    if (!p.in || p.x < 0 || p.x > r.width || p.y < 46 || p.y > r.height) { el.style.display = "none"; return; }
+    el.style.display = "block";
+    const w = el.offsetWidth, box = [p.x + 11, p.y - 8, w, 16];
+    if (!always && boxes.some(b => box[0] < b[0] + b[2] && b[0] < box[0] + box[2] &&
+                                   box[1] < b[1] + b[3] && b[1] < box[1] + box[3])) { el.style.display = "none"; return; }
+    boxes.push(box);
+    el.style.left = (p.x + 11) + "px"; el.style.top = p.y + "px";
   };
-  // Найглибші підписані завжди — вони і є сюжет; решта за галочкою і без накладань.
-  const deepTop = [...geo].filter(s => s.depth != null).sort((a, b) => b.depth - a.depth).slice(0, 5);
-  for (const s of deepTop) label(s, true, false);
-  if (S.names) for (const s of geo) if (!deepTop.includes(s)) label(s, false, false);
-  for (const s of [S.pinned, S.hover]) if (s && s.px != null) label(s, true, true);
-
-  // 7. Масштабна лінійка — уздовж осі «схід», тож вона повертається разом із кадром.
-  const o = project(0, 0, 0), e2 = project(2000, 0, 0);
-  const ex = e2.x - o.x, ey = e2.y - o.y, len = Math.hypot(ex, ey);
-  if (len > 20) {
-    const ux = ex / len, uy = ey / len, x0 = W - 28 - Math.abs(ux) * len, y0 = H - 24;
-    const x1 = x0 + ux * len, y1 = y0 + uy * len;
-    ctx.strokeStyle = muted; ctx.fillStyle = muted; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
-    ctx.textAlign = "right"; ctx.textBaseline = "alphabetic"; ctx.font = "11px " + css("--mono");
-    ctx.fillText("2 км", Math.max(x0, x1), Math.min(y0, y1) - 8);
+  for (const s of deepTop) put(s, true, false);
+  if (S.names) for (const s of geo) if (!deepTop.includes(s)) put(s, false, false);
+  for (const s of [S.pinned, S.hover]) if (s && s.px != null) put(s, true, true);
+  for (const el of rulerLabels) {
+    const p = toScreen(el.v, r.width, r.height);
+    const show = p.in && Math.abs(S.el) < 80 && p.y > 46 && p.x > 0 && p.x < r.width;
+    el.style.display = show ? "block" : "none";
+    if (show) { el.style.left = p.x + "px"; el.style.top = p.y + "px"; }
   }
 }
 
-function tick() {
-  if (tgt) {
-    const f = 0.16;
-    S.az += (tgt.az - S.az) * f; S.el += (tgt.el - S.el) * f;
-    if (Math.abs(tgt.az - S.az) < 0.2 && Math.abs(tgt.el - S.el) < 0.2) { S.az = tgt.az; S.el = tgt.el; tgt = null; }
-    need = true;
-  }
-  if (S.spin) { S.az = (S.az + 0.25) % 360; need = true; }
-  if (need) { need = false; draw(); }
-  requestAnimationFrame(tick);
+// ——— наведення ———
+const ray = new T.Raycaster(), ndc = new T.Vector2();
+function pick(mx, my) {
+  const r = host.getBoundingClientRect();
+  ndc.set((mx / r.width) * 2 - 1, -(my / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hit = ray.intersectObjects(dots, false)[0];
+  return hit ? hit.object.userData.s : null;
 }
-
-// ——— керування ———
-let drag = null;
-cv.addEventListener("pointerdown", e => {
-  cv.setPointerCapture(e.pointerId); cv.classList.add("drag");
-  drag = { x: e.clientX, y: e.clientY, pan: e.shiftKey || e.button === 1 };
-  S.spin = false; syncButtons();
-});
-cv.addEventListener("pointermove", e => {
-  const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
-  if (drag) {
-    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-    drag.x = e.clientX; drag.y = e.clientY;
-    if (drag.pan) { S.panX += dx; S.panY += dy; }
-    else { S.az -= dx * 0.4; S.el = Math.max(-90, Math.min(90, S.el + dy * 0.35)); tgt = null; S.view = null; syncButtons(); }
-    need = true;
-    return;
-  }
-  let best = null, bd = 14 * 14;
-  for (const s of geo) { const q = P(s), d = (q.x - mx) ** 2 + (q.y - my) ** 2; if (d < bd) { bd = d; best = s; } }
-  if (best !== S.hover) { S.hover = best; need = true; showTip(best, mx, my); }
-  else if (best) showTip(best, mx, my);
-});
-addEventListener("pointerup", () => { drag = null; cv.classList.remove("drag"); });
-cv.addEventListener("pointerleave", () => { if (!drag) { S.hover = null; need = true; tip.hidden = true; } });
-cv.addEventListener("wheel", e => {
-  e.preventDefault();
-  S.zoom = Math.max(0.35, Math.min(8, S.zoom * Math.exp(-e.deltaY * 0.0015)));
-  need = true;
-}, { passive: false });
-cv.addEventListener("click", () => { S.pinned = S.hover; need = true; });
-
 function fmtDepth(s) {
-  if (s.depth != null) return s.depth.toFixed(s.depth % 1 ? 1 : 0).replace(".", ",") + " м";
+  if (s.depth != null) return String(s.depth).replace(".", ",") + " м";
   return s.surface ? "на поверхні" : "глибина невідома";
 }
 function showTip(s, mx, my) {
   if (!s) { tip.hidden = true; return; }
   const line = LINES.find(l => l.id === s.line);
-  tip.innerHTML = `<b>${s.name}</b><div class="m">${fmtDepth(s)}</div>` +
-    `<div class="m">${line.name}</div>` +
+  tip.innerHTML = `<b>${s.name}</b><div class="m">${fmtDepth(s)}</div><div class="m">${line.name}</div>` +
     (s.type ? `<div class="m">${s.type}</div>` : "") +
     (s.opened ? `<div class="m">відкрита ${s.opened}</div>` : "");
   tip.hidden = false;
-  const w = tip.offsetWidth, h = tip.offsetHeight;
-  tip.style.left = Math.min(mx + 14, W - w - 8) + "px";
-  tip.style.top = Math.max(8, my - h - 12) + "px";
+  const r = host.getBoundingClientRect();
+  tip.style.left = Math.min(mx + 14, r.width - tip.offsetWidth - 8) + "px";
+  tip.style.top = Math.max(8, my - tip.offsetHeight - 12) + "px";
+}
+function highlight() {
+  for (const m of dots) {
+    const on = m.userData.s === S.hover || m.userData.s === S.pinned;
+    m.scale.setScalar(on ? 1.7 : 1);
+    m.material.emissiveIntensity = on ? 0.55 : (m.userData.s.depth == null ? 0.22 : 0.06);
+  }
 }
 
-function setView(v) {
-  S.view = v; S.spin = false; tgt = { ...VIEWS[v] }; syncButtons(); need = true;
-}
-function syncButtons() {
+let drag = null;
+host.addEventListener("pointerdown", e => {
+  host.setPointerCapture(e.pointerId); host.classList.add("drag");
+  drag = { x: e.clientX, y: e.clientY }; S.spin = false; sync();
+});
+host.addEventListener("pointermove", e => {
+  const r = host.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  if (drag) {
+    S.az -= (e.clientX - drag.x) * 0.35;
+    S.el = Math.max(-89.5, Math.min(89.5, S.el + (e.clientY - drag.y) * 0.3));
+    drag.x = e.clientX; drag.y = e.clientY; tgt = null; S.view = null; sync();
+    return;
+  }
+  const s = pick(mx, my);
+  if (s !== S.hover) { S.hover = s; highlight(); }
+  showTip(s, mx, my);
+});
+addEventListener("pointerup", () => { drag = null; host.classList.remove("drag"); });
+host.addEventListener("pointerleave", () => { if (!drag) { S.hover = null; highlight(); tip.hidden = true; } });
+host.addEventListener("wheel", e => {
+  e.preventDefault();
+  S.zoom = Math.max(0.4, Math.min(9, S.zoom * Math.exp(-e.deltaY * 0.0015)));
+}, { passive: false });
+host.addEventListener("click", e => {
+  const r = host.getBoundingClientRect();
+  S.pinned = pick(e.clientX - r.left, e.clientY - r.top); highlight();
+});
+
+function setView(v) { S.view = v; S.spin = false; tgt = { ...VIEWS[v] }; sync(); }
+function sync() {
   document.querySelectorAll("[data-view]").forEach(b =>
     b.setAttribute("aria-pressed", String(b.dataset.view === S.view)));
   document.querySelector("[data-spin]").setAttribute("aria-pressed", String(S.spin));
 }
 document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => setView(b.dataset.view));
-document.querySelector("[data-spin]").onclick = () => { S.spin = !S.spin; if (S.spin) tgt = null; syncButtons(); need = true; };
-document.querySelector("[data-reset]").onclick = () => {
-  S.zoom = 1; S.panX = S.panY = 0; S.pinned = null; setView("3d");
-};
+document.querySelector("[data-spin]").onclick = () => { S.spin = !S.spin; if (S.spin) tgt = null; sync(); };
+document.querySelector("[data-reset]").onclick = () => { S.zoom = 1; S.pinned = null; highlight(); setView("3d"); };
 const kzEl = document.getElementById("kz"), kzV = document.getElementById("kz-v");
-kzEl.value = S.kz;
-kzEl.oninput = () => { S.kz = +kzEl.value; kzV.textContent = "×" + S.kz; need = true; };
-kzV.textContent = "×" + S.kz;
-document.getElementById("names").onchange = e => { S.names = e.target.checked; need = true; };
-document.getElementById("leaders").onchange = e => { S.leaders = e.target.checked; need = true; };
+kzEl.value = S.kz; kzV.textContent = "×" + S.kz;
+kzEl.oninput = () => { S.kz = +kzEl.value; kzV.textContent = "×" + S.kz; buildDeep(); frame(); highlight(); };
+document.getElementById("names").onchange = e => { S.names = e.target.checked; };
+document.getElementById("leaders").onchange = e => { S.leaders = e.target.checked; buildDeep(); highlight(); };
 
-// ——— тексти навколо карти ———
-const known = ST.filter(s => s.depth != null);
+function tick() {
+  if (tgt) {
+    S.az += (tgt.az - S.az) * 0.16; S.el += (tgt.el - S.el) * 0.16;
+    if (Math.abs(tgt.az - S.az) < 0.15 && Math.abs(tgt.el - S.el) < 0.15) { S.az = tgt.az; S.el = tgt.el; tgt = null; }
+  }
+  if (S.spin) S.az = (S.az + 0.22) % 360;
+  place();
+  renderer.render(scene, camera);
+  drawLabels();
+  requestAnimationFrame(tick);
+}
+
+// ——— тексти навколо сцени ———
 const deep = [...known].sort((a, b) => b.depth - a.depth);
 const fmtN = n => String(n).replace(".", ",");
-
 document.getElementById("legend").innerHTML = LINES.map(l =>
   `<li><i class="dot" style="background:${l.color}"></i>${l.name}</li>`).join("");
-
 const avg = known.reduce((a, s) => a + s.depth, 0) / (known.length || 1);
 document.getElementById("nums").innerHTML = [
   [ST.length, "станцій на трьох лініях"],
@@ -440,32 +495,30 @@ document.getElementById("nums").innerHTML = [
   [fmtN(avg.toFixed(1)) + " м", "середня глибина закладення"],
   [known.length + " з " + ST.length, "станцій із відомою глибиною"],
 ].map(([b, s]) => `<div class="num"><b>${b}</b><span>${s}</span></div>`).join("");
-
 if (deep.length) {
   document.getElementById("deepest-lede").textContent =
     `Найглибша — ${deep[0].name}, ${fmtN(deep[0].depth)} метра під землею.`;
   document.getElementById("plate-m").textContent =
     `${ST.length} станцій · до −${fmtN(deep[0].depth)} м · тягніть, щоб обертати`;
 }
-
 function rank(el, list) {
-  document.getElementById(el).innerHTML = list.map(s =>
+  const box = document.getElementById(el);
+  box.innerHTML = list.map(s =>
     `<li data-n="${s.name}"><span class="n"><i class="dot" style="background:${LC[s.line]}"></i>` +
     `<span>${s.name}</span></span><span class="v">${fmtDepth(s)}</span></li>`).join("");
-  document.getElementById(el).onclick = e => {
+  box.onclick = e => {
     const li = e.target.closest("li"); if (!li) return;
-    S.pinned = byName.get(li.dataset.n); need = true;
+    S.pinned = byName.get(li.dataset.n); highlight();
   };
 }
 rank("rank-deep", deep.slice(0, 10));
 rank("rank-shallow", deep.slice(-10).reverse());
-
 const noDepth = ST.filter(s => s.depth == null);
 document.getElementById("gaps").textContent = noDepth.length
-  ? `Без глибини у джерелі: ${noDepth.map(s => s.name).join(", ")}. Такі станції стоять на нульовій позначці порожнім кружком — це пропуск у даних, а не нульова глибина.`
+  ? `Без глибини у джерелі: ${noDepth.map(s => s.name).join(", ")}. Такі станції висять на нульовій позначці блідою кулею — це пропуск у даних, а не нульова глибина.`
   : "";
 
-addEventListener("resize", resize);
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { need = true; });
-resize(); syncButtons(); tick();
+new ResizeObserver(resize).observe(host);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { buildDeep(); });
+buildDeep(); frame(); resize(); sync(); highlight(); tick();
 </script>

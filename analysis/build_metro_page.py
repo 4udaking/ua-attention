@@ -1,5 +1,9 @@
-"""analysis/metro_template.html + data/metro/stations.json → analysis/metro.html, site/metro.html"""
-import json, pathlib, sys
+"""analysis/metro_template.html + data/metro/stations.json → analysis/metro.html, site/metro.html
+
+Сторінка — ES-модуль і тягне three.js сусіднім файлом, тож vendor/ їде в site/ разом з нею.
+З file:// модуль не завантажиться (CORS): дивитися через Pages або `python3 -m http.server`.
+"""
+import pathlib, shutil, sys
 A = pathlib.Path(__file__).resolve().parent
 src = A.parent / "data" / "metro" / "stations.json"
 if not src.exists():
@@ -16,4 +20,5 @@ site.mkdir(exist_ok=True)
 (site / "metro.html").write_text('<!doctype html><html lang="uk"><head><meta charset="utf-8">\n'
                                  + html.replace("</style>", "</style>\n</head><body>", 1)
                                  + "\n</body></html>", encoding="utf-8")
-print("metro.html", (A / "metro.html").stat().st_size, "байт; site/metro.html готовий")
+shutil.copytree(A / "vendor", site / "vendor", dirs_exist_ok=True)
+print("metro.html", (A / "metro.html").stat().st_size, "байт; site/metro.html і site/vendor готові")
