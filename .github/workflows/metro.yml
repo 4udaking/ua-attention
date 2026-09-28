@@ -26,21 +26,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Розвідка — чи є глибини у статті-списку станцій
+      - name: Розвідка — чи є глибини в англійській Вікіпедії
         run: |
           python3 - <<'PY'
-          import re, collect_metro as m
-          t = "Список станцій Київського метрополітену"
-          p = m.pages([t])[t]
-          txt = p["text"]
-          print("розмір:", len(txt))
-          i = txt.lower().find("глибин")
-          print("слово «глибин» уперше на позиції:", i)
-          if i > 0:
-              print("--- контекст:"); print(txt[max(0, i - 900):i + 900])
-          print("--- заголовки таблиць:")
-          for h in re.findall(r"^!.*$", txt, flags=re.M)[:30]:
-              print("   ", h[:160])
+          import json, re, urllib.parse, collect_metro as m
+          from lib import WIKI_UA, fetch
+          probe = ["Хрещатик", "Позняки", "Оболонь", "Кловська", "Вокзальна", "Видубичі",
+                   "Лук'янівська", "Осокорки", "Поштова площа", "Деміївська"]
+          uk = [f"{n} (станція метро)" for n in probe]
+          d = m.api(action="query", titles="|".join(uk), redirects=1, prop="langlinks",
+                    lllang="en", lllimit="max")
+          en = {}
+          for p in d["query"]["pages"]:
+              for l in p.get("langlinks", []):
+                  en[p["title"]] = l["title"]
+          print("міжмовні посилання:", json.dumps(en, ensure_ascii=False, indent=1))
+          if not en: raise SystemExit("англійських статей не знайдено")
+          url = ("https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode(
+              {"action": "query", "titles": "|".join(en.values()), "prop": "revisions",
+               "rvprop": "content", "rvslots": "main", "redirects": 1,
+               "format": "json", "formatversion": "2"}))
+          for p in json.loads(fetch(url, ua=WIKI_UA, waits=(5, 20)))["query"]["pages"]:
+              if p.get("missing"): print(p["title"], "— немає"); continue
+              txt = p["revisions"][0]["slots"]["main"]["content"]
+              hits = re.findall(r"(?i)^\s*\|\s*(depth[^=]*)=\s*([^\n]{0,60})", txt, flags=re.M)
+              prose = re.findall(r"(?i)depth[^.\n]{0,50}?(\d+(?:\.\d+)?)\s*(?:m\b|met)", txt)
+              print(f'{p["title"]:44s} інфобокс={hits} текст={prose[:3]}')
           PY
 
       - name: Зібрати глибини з Вікіпедії
