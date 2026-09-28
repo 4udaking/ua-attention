@@ -15,6 +15,7 @@ import urllib.parse
 from lib import DATA, WIKI_UA, fetch, log, write_json
 
 API = "https://uk.wikipedia.org/w/api.php"
+RU_API = "https://ru.wikipedia.org/w/api.php"
 
 LINES = [
     {"id": "m1", "num": 1, "name": "Святошинсько-Броварська", "color": "#d3232f"},
@@ -200,6 +201,44 @@ def wikidata_coords(titles):
     return out
 
 
+def langlinks(titles, lang):
+    """Назва статті в uk → назва тієї самої статті в іншому розділі."""
+    out = {}
+    for i in range(0, len(titles), 40):
+        d = api(action="query", titles="|".join(titles[i:i + 40]), redirects=1,
+                prop="langlinks", lllang=lang, lllimit="max")
+        back = {r["to"]: r["from"] for r in d.get("query", {}).get("redirects", [])}
+        for p in d.get("query", {}).get("pages", []):
+            for l in p.get("langlinks", []):
+                out[back.get(p["title"], p["title"])] = l["title"]
+    return out
+
+
+def ru_depths(titles):
+    """Глибини з ru.wikipedia для станцій, яких не знає українська.
+
+    Та сама CC BY-SA, поле в інфобоксі зветься |глубина|. Береться тільки число
+    й тільки туди, де українська мовчить; звідки взялося — видно в depth_src.
+    """
+    out = {}
+    for i in range(0, len(titles), 40):
+        url = RU_API + "?" + urllib.parse.urlencode({
+            "action": "query", "titles": "|".join(titles[i:i + 40]), "redirects": 1,
+            "prop": "revisions", "rvprop": "content", "rvslots": "main",
+            "format": "json", "formatversion": "2"})
+        for p in json.loads(fetch(url, ua=WIKI_UA, waits=(5, 20))).get("query", {}).get("pages", []):
+            if p.get("missing"):
+                continue
+            text = p["revisions"][0]["slots"]["main"]["content"]
+            d = number(field(text, ("глубина заложения", "глубина")))
+            if d is None:
+                m = re.search(r"глубин[аы][^.\n]{0,70}?(\d+(?:[.,]\d+)?)\s*(?:м\b|метр)", text, flags=re.I)
+                d = number(m.group(1)) if m else None
+            if d is not None:
+                out[p["title"]] = d
+    return out
+
+
 def main():
     order = [(lid, i + 1, name) for lid in STATIONS for i, name in enumerate(STATIONS[lid])]
     guess = {name: f"{name} (станція метро)" for _, _, name in order}
@@ -238,6 +277,18 @@ def main():
             "opened": parse_date(field_raw(text, FIELDS["opened"])),
         })
 
+    # Глибини, яких немає в українській, добираємо з російської: там ті самі
+    # інфобокси заповнені щільніше. Джерело кожного числа лишається в depth_src.
+    gap = [s["title"] for s in stations if s["depth"] is None and s["title"]]
+    if gap:
+        ru = langlinks(gap, "ru")
+        got_ru = ru_depths(sorted(set(ru.values())))
+        for s in stations:
+            d = got_ru.get(ru.get(s["title"]))
+            if s["depth"] is None and d is not None:
+                s["depth"], s["depth_src"] = d, "ru.wikipedia"
+        no_depth = [s["name"] for s in stations if s["depth"] is None]
+
     # Частина статей не має {{coord}} — добираємо з Вікіданих.
     need = [s["title"] for s in stations if s["lat"] is None and s["title"]]
     if need:
@@ -249,7 +300,7 @@ def main():
 
     out = {
         "generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
-        "source": "uk.wikipedia.org (CC BY-SA 4.0), координати подекуди з Вікіданих",
+        "source": "uk.wikipedia.org, глибини подекуди з ru.wikipedia.org (обидві CC BY-SA 4.0), координати подекуди з Вікіданих",
         "lines": LINES,
         "transfers": [list(t) for t in TRANSFERS],
         "stations": stations,

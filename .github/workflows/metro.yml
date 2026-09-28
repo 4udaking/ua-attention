@@ -26,6 +26,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Чи відповідає metro.kyiv.ua
+        # curl із --max-time, а не python: минулого разу крок завис на п'ять хвилин.
+        continue-on-error: true
+        timeout-minutes: 2
+        run: |
+          for u in https://metro.kyiv.ua/ https://metro.kyiv.ua/node/181 http://metro.kyiv.ua/; do
+            code=$(curl -sS --max-time 12 -o /tmp/page -w '%{http_code}' -A 'Mozilla/5.0' "$u" || echo "збій")
+            echo "$u → $code, $(wc -c < /tmp/page 2>/dev/null || echo 0) байт"
+            grep -o -m3 -E '.{80}[Гг]либин.{120}' /tmp/page 2>/dev/null | sed 's/<[^>]*>/ /g' || true
+          done
+
       - name: Зібрати глибини з Вікіпедії
         run: python3 collect_metro.py
 
