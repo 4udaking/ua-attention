@@ -1,0 +1,471 @@
+<title>Глибини київського метро</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f4f5f2; --surface:#fcfcfa; --ink:#12151a; --ink2:#4a505a; --muted:#7c818a;
+  --grid:#e3e4df; --axis:#c6c8c1; --rule:rgba(18,21,26,.10); --accent:#b4471c;
+  --plane:rgba(18,21,26,.045); --leader:rgba(18,21,26,.22); --halo:#fcfcfa;
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#101214; --surface:#16191c; --ink:#eef0f2; --ink2:#b8bdc4; --muted:#8a9099;
+    --grid:#24282c; --axis:#383d43; --rule:rgba(255,255,255,.10); --accent:#e8784a;
+    --plane:rgba(255,255,255,.05); --leader:rgba(255,255,255,.20); --halo:#16191c;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#101214; --surface:#16191c; --ink:#eef0f2; --ink2:#b8bdc4; --muted:#8a9099;
+  --grid:#24282c; --axis:#383d43; --rule:rgba(255,255,255,.10); --accent:#e8784a;
+  --plane:rgba(255,255,255,.05); --leader:rgba(255,255,255,.20); --halo:#16191c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:2px}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.page{max-width:1120px;margin:0 auto;padding:40px 24px 64px;display:grid;gap:28px}
+header{display:grid;gap:12px;max-width:780px}
+.eyebrow{margin:0;font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{margin:0;font:700 clamp(28px,5vw,46px)/1.08 var(--display);letter-spacing:-.01em;text-wrap:balance}
+h2{margin:0;font:500 clamp(18px,2.4vw,22px)/1.25 var(--display)}
+h3{margin:0;font:600 14px/1.3 var(--sans)}
+p{margin:0;max-width:66ch;color:var(--ink2)}
+.lede{margin:0;font-size:18px;color:var(--ink2);max-width:66ch}
+
+.stage{position:relative;background:var(--surface);border:1px solid var(--rule);border-radius:12px;overflow:hidden;touch-action:none}
+canvas{display:block;width:100%;height:clamp(420px,72vh,760px);cursor:grab}
+canvas.drag{cursor:grabbing}
+.bar{position:absolute;top:12px;left:12px;right:12px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.bar button{pointer-events:auto;font:500 13px/1 var(--sans);color:var(--ink2);background:var(--surface);
+  border:1px solid var(--rule);border-radius:7px;padding:8px 11px;cursor:pointer}
+.bar button:hover{color:var(--ink)}
+.bar button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.plate{position:absolute;left:12px;bottom:12px;background:var(--surface);border:1px solid var(--rule);
+  border-radius:10px;padding:11px 13px;max-width:min(300px,calc(100% - 24px))}
+.plate .t{font:500 15px/1.2 var(--display)}
+.plate .m{margin-top:3px;font:12px/1.45 var(--mono);color:var(--muted)}
+.tip{position:absolute;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--rule);
+  box-shadow:0 6px 24px rgba(0,0,0,.14);border-radius:8px;padding:9px 11px;font-size:13px;line-height:1.45;max-width:260px;z-index:3}
+.tip b{font-weight:600}
+.tip .m{color:var(--muted);font:12px/1.4 var(--mono)}
+.tip[hidden]{display:none}
+
+.controls{display:flex;flex-wrap:wrap;gap:14px 26px;align-items:center;font-size:13.5px;color:var(--ink2)}
+.controls label{display:flex;align-items:center;gap:8px}
+.controls input[type=range]{width:150px;accent-color:var(--accent)}
+.controls input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0;padding:0;list-style:none;font-size:13.5px;color:var(--ink2)}
+.legend li{display:flex;align-items:center;gap:7px}
+.dot{width:11px;height:11px;border-radius:50%;flex:none}
+
+.nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:18px}
+.num{display:grid;gap:2px}
+.num b{font:600 30px/1.1 var(--sans)}
+.num span{font-size:13.5px;color:var(--ink2);line-height:1.4}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:28px}
+.rank{margin:0;padding:0;list-style:none;display:grid;gap:0}
+.rank li{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--grid);font-size:14px}
+.rank .n{display:flex;align-items:center;gap:8px;min-width:0}
+.rank .n span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank .v{font:500 13px/1 var(--mono);color:var(--ink)}
+.rank button{all:unset;cursor:pointer;display:contents}
+.rank li:hover .n span{color:var(--accent)}
+footer{border-top:1px solid var(--rule);padding-top:16px;font-size:13px;color:var(--muted);display:grid;gap:6px}
+footer a{color:var(--muted)}
+.warn{font:12.5px/1.5 var(--mono);color:var(--muted)}
+</style>
+
+<div class="page">
+  <header>
+    <p class="eyebrow">Київський метрополітен · зріз</p>
+    <h1>Глибини київського метро</h1>
+    <p class="lede">Три лінії, 52 станції — у розрізі. Кожна станція стоїть на своїй глибині
+      закладення, пунктир веде до поверхні. <span id="deepest-lede"></span></p>
+  </header>
+
+  <div class="stage">
+    <div class="bar">
+      <button data-view="3d">3D</button>
+      <button data-view="top">Зверху</button>
+      <button data-view="cut">Розріз</button>
+      <button data-view="bottom">Знизу</button>
+      <button data-spin>Обертання</button>
+      <button data-reset>Скинути</button>
+    </div>
+    <canvas id="c"></canvas>
+    <div class="plate">
+      <div class="t">Глибини київського метро</div>
+      <div class="m" id="plate-m"></div>
+    </div>
+    <div class="tip" id="tip" hidden></div>
+  </div>
+
+  <div class="controls">
+    <label>Вертикальний масштаб <input type="range" id="kz" min="10" max="160" step="5"><b id="kz-v" style="font:500 13px var(--mono)"></b></label>
+    <label><input type="checkbox" id="names"> Назви станцій</label>
+    <label><input type="checkbox" id="leaders" checked> Пунктир до поверхні</label>
+    <ul class="legend" id="legend"></ul>
+  </div>
+
+  <div class="nums" id="nums"></div>
+
+  <div class="cols">
+    <section>
+      <h2>Найглибші</h2>
+      <ol class="rank" id="rank-deep"></ol>
+    </section>
+    <section>
+      <h2>Найдрібніші</h2>
+      <ol class="rank" id="rank-shallow"></ol>
+    </section>
+  </div>
+
+  <footer>
+    <div>Глибина закладення, координати, тип і дата відкриття — <a href="https://uk.wikipedia.org/wiki/Список_станцій_Київського_метрополітену">українська Вікіпедія</a>, CC BY-SA 4.0.
+      Порядок станцій уздовж ліній і пересадки задані в <code>collect_metro.py</code>.</div>
+    <div class="warn" id="gaps"></div>
+    <div>План на поверхні — не мапа міста, а тінь самих ліній: координати станцій, зведені на нульову позначку.
+      Вертикальний масштаб перебільшено, інакше 105 метрів на тлі 25 кілометрів міста — волосина.</div>
+  </footer>
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+
+const LINES = DATA.lines, ST = DATA.stations;
+const byName = new Map(ST.map(s => [s.name, s]));
+const LC = Object.fromEntries(LINES.map(l => [l.id, l.color]));
+
+// Широти/довготи → метри від центру мережі. Локальний масштаб: на 50° похибка проєкції
+// на 25 км міста менша за товщину лінії, тож без справжньої картографії.
+const withGeo = ST.filter(s => s.lat != null && s.lon != null);
+const lat0 = withGeo.reduce((a, s) => a + s.lat, 0) / withGeo.length;
+const lon0 = withGeo.reduce((a, s) => a + s.lon, 0) / withGeo.length;
+for (const s of ST) {
+  if (s.lat == null || s.lon == null) { s.px = s.py = null; continue; }
+  s.px = (s.lon - lon0) * 111320 * Math.cos(lat0 * Math.PI / 180);
+  s.py = (s.lat - lat0) * 110574;
+}
+const geo = ST.filter(s => s.px != null);
+const ext = a => [Math.min(...a), Math.max(...a)];
+const [xMin, xMax] = ext(geo.map(s => s.px)), [yMin, yMax] = ext(geo.map(s => s.py));
+const depths = ST.filter(s => s.depth != null).map(s => s.depth);
+const dMax = depths.length ? Math.max(...depths) : 100;
+
+const paths = LINES.map(l => ({
+  line: l,
+  st: ST.filter(s => s.line === l.id && s.px != null).sort((a, b) => a.order - b.order),
+}));
+const transfers = (DATA.transfers || [])
+  .map(([a, b]) => [byName.get(a), byName.get(b)])
+  .filter(([a, b]) => a && b && a.px != null && b.px != null);
+
+const VIEWS = {
+  "3d":    { az: -26, el: 26 },
+  top:     { az: 0,   el: 90 },
+  cut:     { az: 0,   el: 0 },
+  bottom:  { az: -26, el: -34 },
+};
+const S = { az: -26, el: 26, kz: 80, zoom: 1, panX: 0, panY: 0, spin: false, view: "3d",
+            names: false, leaders: true, hover: null, pinned: null };
+let tgt = null;  // ціль анімації переходу між ракурсами
+
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const tip = document.getElementById("tip");
+let W = 0, H = 0, base = 1, cx = 0, cy = 0, need = true;
+
+function resize() {
+  const r = cv.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+  W = r.width; H = r.height;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  need = true;
+}
+
+const rad = d => d * Math.PI / 180;
+
+function raw(x, y, z) {
+  const a = rad(S.az), e = rad(S.el);
+  const x1 = x * Math.cos(a) - y * Math.sin(a);
+  const y1 = x * Math.sin(a) + y * Math.cos(a);
+  return [x1, y1 * Math.sin(e) + z * Math.cos(e), -y1 * Math.cos(e) + z * Math.sin(e)];
+}
+
+// Кадр підганяється під ракурс: у розрізі мережа плеската, зверху — квадратна,
+// один сталий масштаб лишав би півкадру порожнечі.
+function fit() {
+  let a = Infinity, b = -Infinity, c = Infinity, d = -Infinity;
+  const pt = (x, y, z) => { const [u, v] = raw(x, y, z); a = Math.min(a, u); b = Math.max(b, u); c = Math.min(c, v); d = Math.max(d, v); };
+  for (const s of geo) { pt(s.px, s.py, 0); pt(s.px, s.py, pz(s)); }
+  pt(xMin - 1600, yMin - 1600, 0); pt(xMax + 1600, yMax + 1600, 0);
+  cx = (a + b) / 2; cy = (c + d) / 2;
+  base = Math.min((W - 130) / Math.max(b - a, 1), (H - 120) / Math.max(d - c, 1));
+}
+
+function project(x, y, z) {
+  const [u, v, near] = raw(x, y, z), k = base * S.zoom;
+  return { x: W / 2 + S.panX + (u - cx) * k, y: H / 2 + S.panY - (v - cy) * k, near };
+}
+
+const pz = s => (s.depth == null ? 0 : -s.depth) * S.kz;   // глибина у «метрах плану»
+const P = s => project(s.px, s.py, pz(s));
+const Pflat = s => project(s.px, s.py, 0);
+
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+function draw() {
+  fit();
+  const ink = css("--ink"), ink2 = css("--ink2"), muted = css("--muted"),
+        plane = css("--plane"), leader = css("--leader"), halo = css("--halo"), gridc = css("--grid");
+  ctx.clearRect(0, 0, W, H);
+  ctx.lineJoin = ctx.lineCap = "round";
+
+  // 1. Поверхня: сітка через 2 км + тінь ліній на нульовій позначці.
+  const pad = 1200;
+  ctx.strokeStyle = gridc; ctx.lineWidth = 1;
+  for (let gx = Math.ceil((xMin - pad) / 2000) * 2000; gx <= xMax + pad; gx += 2000) {
+    const a = project(gx, yMin - pad, 0), b = project(gx, yMax + pad, 0);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  for (let gy = Math.ceil((yMin - pad) / 2000) * 2000; gy <= yMax + pad; gy += 2000) {
+    const a = project(xMin - pad, gy, 0), b = project(xMax + pad, gy, 0);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  ctx.globalAlpha = 0.5; ctx.lineWidth = 2.5;
+  for (const p of paths) {
+    ctx.strokeStyle = p.line.color; ctx.beginPath();
+    p.st.forEach((s, i) => { const q = Pflat(s); i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); });
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // 2. Лінійка глибин уздовж західного краю. Згори вона вироджується в точку — ховаємо.
+  if (Math.abs(Math.cos(rad(S.el))) > 0.12) {
+    const rx = xMin - pad, ry = yMin - pad;
+    ctx.strokeStyle = css("--axis"); ctx.lineWidth = 1;
+    const top = project(rx, ry, 0), bot = project(rx, ry, -dMax * S.kz);
+    ctx.beginPath(); ctx.moveTo(top.x, top.y); ctx.lineTo(bot.x, bot.y); ctx.stroke();
+    ctx.fillStyle = muted; ctx.font = "11px " + css("--mono"); ctx.textAlign = "right"; ctx.textBaseline = "middle";
+    for (let d = 0; d <= dMax; d += 25) {
+      const q = project(rx, ry, -d * S.kz), t = project(rx - 500, ry, -d * S.kz);
+      ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(t.x, t.y); ctx.stroke();
+      ctx.fillText(d === 0 ? "0" : "−" + d + " м", t.x - 4, t.y);
+    }
+  }
+
+  // 3. Пунктир від поверхні до станції.
+  if (S.leaders) {
+    ctx.strokeStyle = leader; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+    for (const s of geo) {
+      if (!s.depth) continue;
+      const a = Pflat(s), b = P(s);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
+  // 4. Переходи між станціями-сусідками різних ліній.
+  ctx.strokeStyle = ink2; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+  for (const [a, b] of transfers) {
+    const p = P(a), q = P(b);
+    ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+  }
+  ctx.setLineDash([]); ctx.globalAlpha = 1;
+
+  // 5. Лінії та станції — дальнє першим, щоб ближче перекривало.
+  const items = [];
+  for (const p of paths) {
+    for (let i = 0; i < p.st.length - 1; i++) {
+      const a = P(p.st[i]), b = P(p.st[i + 1]);
+      items.push({ k: "seg", near: Math.min(a.near, b.near), a, b, c: p.line.color });
+    }
+  }
+  for (const s of geo) { const q = P(s); items.push({ k: "st", near: q.near, q, s }); }
+  items.sort((u, v) => u.near - v.near);
+
+  ctx.lineWidth = 3.5;
+  for (const it of items) {
+    if (it.k === "seg") {
+      ctx.strokeStyle = it.c;
+      ctx.beginPath(); ctx.moveTo(it.a.x, it.a.y); ctx.lineTo(it.b.x, it.b.y); ctx.stroke();
+    } else {
+      const { q, s } = it, act = s === S.hover || s === S.pinned;
+      ctx.beginPath(); ctx.arc(q.x, q.y, act ? 7 : 4.6, 0, 7);
+      ctx.fillStyle = s.depth == null ? halo : LC[s.line];
+      ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = s.depth == null ? LC[s.line] : halo; ctx.stroke();
+      ctx.lineWidth = 3.5;
+    }
+  }
+
+  // 6. Підписи: завжди для активної та найглибших, решта — за галочкою.
+  const drawn = [];
+  ctx.font = "12px " + css("--sans"); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  const hits = b => drawn.some(o => b[0] < o[0] + o[2] && o[0] < b[0] + b[2] &&
+                                    b[1] < o[1] + o[3] && o[1] < b[1] + b[3]);
+  const label = (s, strong, always) => {
+    const q = P(s), t = s.name, w = ctx.measureText(t).width;
+    // Чотири місця на вибір: праворуч, ліворуч, під, над. Купчаться лише в центрі міста.
+    const spots = [[10, 0], [-w - 10, 0], [-w / 2, 15], [-w / 2, -15]];
+    let put = null;
+    for (const [dx, dy] of spots) {
+      const box = [q.x + dx - 3, q.y + dy - 8, w + 6, 16];
+      if (always || !hits(box)) { put = [q.x + dx, q.y + dy, box]; break; }
+    }
+    if (!put) return;
+    drawn.push(put[2]);
+    ctx.lineWidth = 3; ctx.strokeStyle = halo; ctx.strokeText(t, put[0], put[1]);
+    ctx.fillStyle = strong ? ink : ink2; ctx.fillText(t, put[0], put[1]);
+    ctx.lineWidth = 3.5;
+  };
+  // Найглибші підписані завжди — вони і є сюжет; решта за галочкою і без накладань.
+  const deepTop = [...geo].filter(s => s.depth != null).sort((a, b) => b.depth - a.depth).slice(0, 5);
+  for (const s of deepTop) label(s, true, false);
+  if (S.names) for (const s of geo) if (!deepTop.includes(s)) label(s, false, false);
+  for (const s of [S.pinned, S.hover]) if (s && s.px != null) label(s, true, true);
+
+  // 7. Масштабна лінійка — уздовж осі «схід», тож вона повертається разом із кадром.
+  const o = project(0, 0, 0), e2 = project(2000, 0, 0);
+  const ex = e2.x - o.x, ey = e2.y - o.y, len = Math.hypot(ex, ey);
+  if (len > 20) {
+    const ux = ex / len, uy = ey / len, x0 = W - 28 - Math.abs(ux) * len, y0 = H - 24;
+    const x1 = x0 + ux * len, y1 = y0 + uy * len;
+    ctx.strokeStyle = muted; ctx.fillStyle = muted; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    ctx.textAlign = "right"; ctx.textBaseline = "alphabetic"; ctx.font = "11px " + css("--mono");
+    ctx.fillText("2 км", Math.max(x0, x1), Math.min(y0, y1) - 8);
+  }
+}
+
+function tick() {
+  if (tgt) {
+    const f = 0.16;
+    S.az += (tgt.az - S.az) * f; S.el += (tgt.el - S.el) * f;
+    if (Math.abs(tgt.az - S.az) < 0.2 && Math.abs(tgt.el - S.el) < 0.2) { S.az = tgt.az; S.el = tgt.el; tgt = null; }
+    need = true;
+  }
+  if (S.spin) { S.az = (S.az + 0.25) % 360; need = true; }
+  if (need) { need = false; draw(); }
+  requestAnimationFrame(tick);
+}
+
+// ——— керування ———
+let drag = null;
+cv.addEventListener("pointerdown", e => {
+  cv.setPointerCapture(e.pointerId); cv.classList.add("drag");
+  drag = { x: e.clientX, y: e.clientY, pan: e.shiftKey || e.button === 1 };
+  S.spin = false; syncButtons();
+});
+cv.addEventListener("pointermove", e => {
+  const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  if (drag) {
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    drag.x = e.clientX; drag.y = e.clientY;
+    if (drag.pan) { S.panX += dx; S.panY += dy; }
+    else { S.az -= dx * 0.4; S.el = Math.max(-90, Math.min(90, S.el + dy * 0.35)); tgt = null; S.view = null; syncButtons(); }
+    need = true;
+    return;
+  }
+  let best = null, bd = 14 * 14;
+  for (const s of geo) { const q = P(s), d = (q.x - mx) ** 2 + (q.y - my) ** 2; if (d < bd) { bd = d; best = s; } }
+  if (best !== S.hover) { S.hover = best; need = true; showTip(best, mx, my); }
+  else if (best) showTip(best, mx, my);
+});
+addEventListener("pointerup", () => { drag = null; cv.classList.remove("drag"); });
+cv.addEventListener("pointerleave", () => { if (!drag) { S.hover = null; need = true; tip.hidden = true; } });
+cv.addEventListener("wheel", e => {
+  e.preventDefault();
+  S.zoom = Math.max(0.35, Math.min(8, S.zoom * Math.exp(-e.deltaY * 0.0015)));
+  need = true;
+}, { passive: false });
+cv.addEventListener("click", () => { S.pinned = S.hover; need = true; });
+
+function fmtDepth(s) {
+  if (s.depth != null) return s.depth.toFixed(s.depth % 1 ? 1 : 0).replace(".", ",") + " м";
+  return s.surface ? "на поверхні" : "глибина невідома";
+}
+function showTip(s, mx, my) {
+  if (!s) { tip.hidden = true; return; }
+  const line = LINES.find(l => l.id === s.line);
+  tip.innerHTML = `<b>${s.name}</b><div class="m">${fmtDepth(s)}</div>` +
+    `<div class="m">${line.name}</div>` +
+    (s.type ? `<div class="m">${s.type}</div>` : "") +
+    (s.opened ? `<div class="m">відкрита ${s.opened}</div>` : "");
+  tip.hidden = false;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.min(mx + 14, W - w - 8) + "px";
+  tip.style.top = Math.max(8, my - h - 12) + "px";
+}
+
+function setView(v) {
+  S.view = v; S.spin = false; tgt = { ...VIEWS[v] }; syncButtons(); need = true;
+}
+function syncButtons() {
+  document.querySelectorAll("[data-view]").forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.view === S.view)));
+  document.querySelector("[data-spin]").setAttribute("aria-pressed", String(S.spin));
+}
+document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => setView(b.dataset.view));
+document.querySelector("[data-spin]").onclick = () => { S.spin = !S.spin; if (S.spin) tgt = null; syncButtons(); need = true; };
+document.querySelector("[data-reset]").onclick = () => {
+  S.zoom = 1; S.panX = S.panY = 0; S.pinned = null; setView("3d");
+};
+const kzEl = document.getElementById("kz"), kzV = document.getElementById("kz-v");
+kzEl.value = S.kz;
+kzEl.oninput = () => { S.kz = +kzEl.value; kzV.textContent = "×" + S.kz; need = true; };
+kzV.textContent = "×" + S.kz;
+document.getElementById("names").onchange = e => { S.names = e.target.checked; need = true; };
+document.getElementById("leaders").onchange = e => { S.leaders = e.target.checked; need = true; };
+
+// ——— тексти навколо карти ———
+const known = ST.filter(s => s.depth != null);
+const deep = [...known].sort((a, b) => b.depth - a.depth);
+const fmtN = n => String(n).replace(".", ",");
+
+document.getElementById("legend").innerHTML = LINES.map(l =>
+  `<li><i class="dot" style="background:${l.color}"></i>${l.name}</li>`).join("");
+
+const avg = known.reduce((a, s) => a + s.depth, 0) / (known.length || 1);
+document.getElementById("nums").innerHTML = [
+  [ST.length, "станцій на трьох лініях"],
+  [deep.length ? fmtN(deep[0].depth) + " м" : "—", deep.length ? deep[0].name + " — найглибша" : "глибин немає"],
+  [fmtN(avg.toFixed(1)) + " м", "середня глибина закладення"],
+  [known.length + " з " + ST.length, "станцій із відомою глибиною"],
+].map(([b, s]) => `<div class="num"><b>${b}</b><span>${s}</span></div>`).join("");
+
+if (deep.length) {
+  document.getElementById("deepest-lede").textContent =
+    `Найглибша — ${deep[0].name}, ${fmtN(deep[0].depth)} метра під землею.`;
+  document.getElementById("plate-m").textContent =
+    `${ST.length} станцій · до −${fmtN(deep[0].depth)} м · тягніть, щоб обертати`;
+}
+
+function rank(el, list) {
+  document.getElementById(el).innerHTML = list.map(s =>
+    `<li data-n="${s.name}"><span class="n"><i class="dot" style="background:${LC[s.line]}"></i>` +
+    `<span>${s.name}</span></span><span class="v">${fmtDepth(s)}</span></li>`).join("");
+  document.getElementById(el).onclick = e => {
+    const li = e.target.closest("li"); if (!li) return;
+    S.pinned = byName.get(li.dataset.n); need = true;
+  };
+}
+rank("rank-deep", deep.slice(0, 10));
+rank("rank-shallow", deep.slice(-10).reverse());
+
+const noDepth = ST.filter(s => s.depth == null);
+document.getElementById("gaps").textContent = noDepth.length
+  ? `Без глибини у джерелі: ${noDepth.map(s => s.name).join(", ")}. Такі станції стоять на нульовій позначці порожнім кружком — це пропуск у даних, а не нульова глибина.`
+  : "";
+
+addEventListener("resize", resize);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { need = true; });
+resize(); syncButtons(); tick();
+</script>

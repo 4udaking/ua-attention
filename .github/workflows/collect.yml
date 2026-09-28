@@ -52,6 +52,9 @@ jobs:
           python3 analysis/telegram_spikes.py > /dev/null
           python3 analysis/assemble.py > /dev/null
           python3 analysis/build_page.py
+          # Метро — не щоденний шар, але site/ збирається лише тут: без цього
+          # кроку metro.html зникав би з Pages після кожного збору.
+          [ -f data/metro/stations.json ] && python3 analysis/build_metro_page.py || true
 
       - name: Зберегти зміни
         run: |
