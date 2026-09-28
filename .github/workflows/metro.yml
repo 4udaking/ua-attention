@@ -26,44 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Розвідка — офіційний сайт метрополітену і російська Вікіпедія
-        continue-on-error: true
-        run: |
-          python3 - <<'PY'
-          import json, re, urllib.parse, collect_metro as m
-          from lib import BROWSER_UA, WIKI_UA, fetch
-
-          print("### metro.kyiv.ua")
-          for u in ("https://metro.kyiv.ua/node/181", "https://metro.kyiv.ua/stanciyi"):
-              try:
-                  html = fetch(u, ua=BROWSER_UA, waits=(5,), timeout=25)
-              except Exception as e:
-                  print(f"  {u} → {type(e).__name__}: {e}"); continue
-              txt = re.sub(r"<[^>]+>", " ", html)
-              i = txt.lower().find("либин")
-              print(f"  {u} → {len(html)} байт, «глибин» на позиції {i}")
-              if i > 0: print("    ...", re.sub(r"\s+", " ", txt[max(0, i-200):i+260]))
-
-          print("### ru.wikipedia — скільки станцій мають глубину")
-          probe = ["Хрещатик", "Позняки", "Оболонь", "Кловська", "Видубичі",
-                   "Лук'янівська", "Осокорки", "Поштова площа", "Деміївська", "Сирець"]
-          d = m.api(action="query", titles="|".join(f"{n} (станція метро)" for n in probe),
-                    redirects=1, prop="langlinks", lllang="ru", lllimit="max")
-          ru = [l["title"] for p in d["query"]["pages"] for l in p.get("langlinks", [])]
-          print("  статей:", len(ru))
-          if ru:
-              url = ("https://ru.wikipedia.org/w/api.php?" + urllib.parse.urlencode(
-                  {"action": "query", "titles": "|".join(ru), "prop": "revisions",
-                   "rvprop": "content", "rvslots": "main", "redirects": 1,
-                   "format": "json", "formatversion": "2"}))
-              for p in json.loads(fetch(url, ua=WIKI_UA, waits=(5, 20)))["query"]["pages"]:
-                  if p.get("missing"): continue
-                  t = p["revisions"][0]["slots"]["main"]["content"]
-                  box = re.findall(r"(?i)\n\s*\|\s*(глубина[^=]*?)\s*=\s*([^\n]{0,40})", t)
-                  pr = re.findall(r"(?i)глубин[аы][^.\n]{0,60}?(\d+(?:[.,]\d+)?)\s*(?:м\b|метр)", t)
-                  print(f'  {p["title"]:34s} інфобокс={box} текст={pr[:2]}')
-          PY
-
       - name: Зібрати глибини з Вікіпедії
         run: python3 collect_metro.py
 

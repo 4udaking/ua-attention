@@ -92,8 +92,8 @@ footer a{color:var(--muted)}
   <header>
     <p class="eyebrow">Київський метрополітен · зріз</p>
     <h1>Глибини київського метро</h1>
-    <p class="lede">Три лінії, 52 станції — у розрізі. Кожна станція стоїть на своїй глибині
-      закладення, пунктир веде до поверхні. <span id="deepest-lede"></span></p>
+    <p class="lede">Три лінії, 52 станції — у розрізі. Глибину закладення Вікіпедія знає
+      для п'ятнадцяти: вони й звисають під планом міста. <span id="deepest-lede"></span></p>
   </header>
 
   <div class="stage">
@@ -117,7 +117,7 @@ footer a{color:var(--muted)}
   <div class="controls">
     <label>Вертикальний масштаб <input type="range" id="kz" min="10" max="160" step="5"><b id="kz-v" style="font:500 13px var(--mono)"></b></label>
     <label><input type="checkbox" id="names"> Назви станцій</label>
-    <label><input type="checkbox" id="leaders" checked> Пунктир до поверхні</label>
+    <label><input type="checkbox" id="leaders" checked> З'єднати з поверхнею</label>
     <ul class="legend" id="legend"></ul>
   </div>
 
@@ -308,16 +308,36 @@ function buildDeep() {
   for (const c of [...deepGroup.children]) if (c !== rulerTicks) { dispose(c); deepGroup.remove(c); }
   dots.length = 0;
 
+  // Труба йде тільки там, де глибину знають обидва кінці перегону: таких 4 із 49.
+  // Простягнути її крізь станцію без числа означало б намалювати глибину, якої немає
+  // в джерелі, — саме тому решта станцій висить окремими краплями під планом.
   for (const p of order) {
-    const v = p.st.map(s => new T.Vector3(s.px, y(s), s.pz));
-    if (v.length > 1) {
-      const curve = new T.CatmullRomCurve3(v, false, "catmullrom", 0.12);
-      const tube = new T.Mesh(new T.TubeGeometry(curve, v.length * 12, 0.12, 10, false),
-        new T.MeshStandardMaterial({ color: col(p.line.color), roughness: 0.42, metalness: 0.02 }));
-      deepGroup.add(tube);
+    let run = [];
+    const flush = () => {
+      if (run.length > 1) {
+        const curve = new T.CatmullRomCurve3(run, false, "catmullrom", 0.12);
+        deepGroup.add(new T.Mesh(new T.TubeGeometry(curve, run.length * 12, 0.12, 10, false),
+          new T.MeshStandardMaterial({ color: col(p.line.color), roughness: 0.42, metalness: 0.02 })));
+      }
+      run = [];
+    };
+    for (const s of p.st) {
+      if (s.depth == null) { flush(); continue; }
+      run.push(new T.Vector3(s.px, y(s), s.pz));
     }
+    flush();
+
     for (const s of p.st) {
       const hollow = s.depth == null;
+      if (!hollow && S.leaders) {
+        // Крапля від плану до станції — те саме, що пунктир, тільки кольором лінії
+        // й помітно: без неї 15 куль висіли б у повітрі без зв'язку з мережею.
+        const drop = new T.Mesh(new T.CylinderGeometry(0.045, 0.045, Math.abs(y(s)), 8, 1),
+          new T.MeshStandardMaterial({ color: col(p.line.color), roughness: 0.55,
+                                       transparent: true, opacity: 0.75 }));
+        drop.position.set(s.px, y(s) / 2, s.pz);
+        deepGroup.add(drop);
+      }
       const m = new T.Mesh(new T.SphereGeometry(hollow ? 0.15 : 0.19, 20, 14),
         new T.MeshStandardMaterial({
           color: hollow ? col(css("--surface")) : col(p.line.color),
@@ -327,17 +347,6 @@ function buildDeep() {
       m.position.set(s.px, y(s), s.pz);
       m.userData.s = s;
       deepGroup.add(m); dots.push(m);
-    }
-  }
-
-  if (S.leaders) {
-    const pts = [];
-    for (const s of geo) if (s.depth) pts.push(new T.Vector3(s.px, 0, s.pz), new T.Vector3(s.px, y(s), s.pz));
-    if (pts.length) {
-      const ls = new T.LineSegments(new T.BufferGeometry().setFromPoints(pts),
-        new T.LineDashedMaterial({ color: col(css("--ink2")), transparent: true, opacity: 0.35,
-                                   dashSize: 0.14, gapSize: 0.16 }));
-      ls.computeLineDistances(); deepGroup.add(ls);
     }
   }
 
@@ -476,9 +485,18 @@ function pick(mx, my) {
   const hit = ray.intersectObjects(dots, false)[0];
   return hit ? hit.object.userData.s : null;
 }
+// Числа немає у 37 станцій, але тип конструкції є в усіх, а він сам по собі
+// каже про закладення: пілонну станцію мілко не будують.
+function laying(s) {
+  const t = (s.type || "").toLowerCase();
+  if (/наземн|естакад/.test(t)) return "на поверхні";
+  if (t.includes("мілк")) return "мілкого закладення";
+  if (t.includes("глибок") || t.includes("пілонн")) return "глибокого закладення";
+  return null;
+}
 function fmtDepth(s) {
   if (s.depth != null) return String(s.depth).replace(".", ",") + " м";
-  return s.surface ? "на поверхні" : "глибина невідома";
+  return laying(s) ? "глибина невідома · " + laying(s) : "глибина невідома";
 }
 function showTip(s, mx, my) {
   if (!s) { tip.hidden = true; return; }
@@ -563,7 +581,7 @@ const avg = known.reduce((a, s) => a + s.depth, 0) / (known.length || 1);
 document.getElementById("nums").innerHTML = [
   [ST.length, "станцій на трьох лініях"],
   [deep.length ? fmtN(deep[0].depth) + " м" : "—", deep.length ? deep[0].name + " — найглибша" : "глибин немає"],
-  [fmtN(avg.toFixed(1)) + " м", "середня глибина закладення"],
+  [fmtN(avg.toFixed(1)) + " м", "середня серед відомих"],
   [known.length + " з " + ST.length, "станцій із відомою глибиною"],
 ].map(([b, s]) => `<div class="num"><b>${b}</b><span>${s}</span></div>`).join("");
 if (deep.length) {
@@ -585,9 +603,15 @@ function rank(el, list) {
 rank("rank-deep", deep.slice(0, 10));
 rank("rank-shallow", deep.slice(-10).reverse());
 const noDepth = ST.filter(s => s.depth == null);
-document.getElementById("gaps").textContent = noDepth.length
-  ? `Без глибини у джерелі: ${noDepth.map(s => s.name).join(", ")}. Такі станції висять на нульовій позначці блідою кулею — це пропуск у даних, а не нульова глибина.`
-  : "";
+if (noDepth.length) {
+  const by = k => noDepth.filter(s => laying(s) === k).length;
+  document.getElementById("gaps").textContent =
+    `Глибина відома у ${known.length} станцій із ${ST.length}: у решти поле в інфобоксі порожнє ` +
+    `(в англійській Вікіпедії теж). Ці ${noDepth.length} висять блідою кулею на нульовій позначці — ` +
+    `це пропуск у даних, а не нульова глибина. Тип конструкції відомий у всіх: ` +
+    `${by("глибокого закладення")} глибокого закладення, ${by("мілкого закладення")} мілкого, ` +
+    `${by("на поверхні")} на поверхні — наведіть на станцію.`;
+}
 
 new ResizeObserver(resize).observe(host);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { buildDeep(); });
