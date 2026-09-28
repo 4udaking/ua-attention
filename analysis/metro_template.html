@@ -44,6 +44,7 @@ p{margin:0;max-width:66ch;color:var(--ink2)}
 #labels div{position:absolute;white-space:nowrap;font:12px/1 var(--sans);color:var(--ink2);
   transform:translate(0,-50%);text-shadow:0 0 3px var(--surface),0 0 3px var(--surface),0 0 3px var(--surface)}
 #labels div.s{color:var(--ink);font-weight:500}
+#labels div.dist{font:500 10.5px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);opacity:.85;transform:translate(-50%,-50%);text-shadow:none}
 #labels div.ruler{font:11px/1 var(--mono);color:var(--muted);transform:translate(-100%,-50%)}
 .bar{position:absolute;top:12px;left:12px;right:12px;display:flex;flex-wrap:wrap;gap:6px;z-index:2}
 .bar button{font:500 13px/1 var(--sans);color:var(--ink2);background:var(--surface);
@@ -136,8 +137,11 @@ footer a{color:var(--muted)}
   <footer>
     <div>Глибина закладення, координати, тип і дата відкриття — <a href="https://uk.wikipedia.org/wiki/Список_станцій_Київського_метрополітену">українська Вікіпедія</a>, CC BY-SA 4.0.
       Порядок станцій уздовж ліній і пересадки задані в <code>collect_metro.py</code>. Сцена — three.js r170, MIT, лежить у репо.</div>
+    <div>План міста: межі десяти районів — <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, ODbL.
+      Русло Дніпра — осьова лінія Natural Earth 10m (суспільне надбання): для міста вона схематична,
+      похибка до кілометра. Збирає обидва шари <code>collect_city_map.py</code>.</div>
     <div class="warn" id="gaps"></div>
-    <div>План на поверхні — не мапа міста, а тінь самих ліній: координати станцій, зведені на нульову позначку.
+    <div>На нульовій позначці, крім плану міста, лежить тінь самих ліній — координати станцій, зведені догори.
       Перегін між станціями — плавна крива, а не справжня траса тунелю. Вертикальний масштаб перебільшено,
       інакше 105 метрів на тлі 25 кілометрів міста — волосина.</div>
   </footer>
@@ -147,6 +151,7 @@ footer a{color:var(--muted)}
 import * as T from "./vendor/three.module.min.js";
 
 const DATA = /*__DATA__*/null;
+const CITY = /*__CITY__*/null;   // план міста: райони й русло, може бути null
 const LINES = DATA.lines, ST = DATA.stations;
 const byName = new Map(ST.map(s => [s.name, s]));
 const LC = Object.fromEntries(LINES.map(l => [l.id, l.color]));
@@ -207,21 +212,70 @@ const y = s => (s.depth == null ? 0 : -s.depth) * S.kz * M;
 const col = h => new T.Color().setStyle(h);
 const dispose = g => { g.traverse(o => { o.geometry?.dispose(); o.material?.dispose(); }); g.clear(); };
 
-// ——— поверхня: сітка через 2 км і тінь ліній на нульовій позначці ———
+// ——— поверхня: план міста на нульовій позначці й тінь ліній на ньому ———
 const PAD = 1.6;
+const ll = (lon, lat) => [(lon - lon0) * 111320 * Math.cos(lat0 * Math.PI / 180) * M,
+                          -(lat - lat0) * 110574 * M];
+const districtLabels = [];
+
 function buildSurface() {
   const g = new T.Group();
-  const pts = [], gc = col(css("--grid"));
-  for (let x = Math.ceil((xMin - PAD) / 2) * 2; x <= xMax + PAD; x += 2)
-    pts.push(new T.Vector3(x, 0, zMin - PAD), new T.Vector3(x, 0, zMax + PAD));
-  for (let z = Math.ceil((zMin - PAD) / 2) * 2; z <= zMax + PAD; z += 2)
-    pts.push(new T.Vector3(xMin - PAD, 0, z), new T.Vector3(xMax + PAD, 0, z));
-  g.add(new T.LineSegments(new T.BufferGeometry().setFromPoints(pts),
-        new T.LineBasicMaterial({ color: gc, transparent: true, opacity: 0.9 })));
+  if (CITY) {
+    // Райони — заливка й контур. depthWrite:false, щоб площина не з'їдала те, що під нею:
+    // згори крізь неї видно тунелі, знизу вона сама ховається за ними.
+    const fillMat = new T.MeshBasicMaterial({ color: col(css("--ink2")), transparent: true,
+      opacity: 0.055, depthWrite: false, side: T.DoubleSide });
+    const lineMat = new T.LineBasicMaterial({ color: col(css("--axis")), transparent: true,
+      opacity: 0.85, depthWrite: false });
+    for (const d of CITY.districts) {
+      let best = null, bestA = -1;
+      for (const ring of d.rings) {
+        const pts = ring.map(([lo, la]) => ll(lo, la));
+        const shape = new T.Shape(pts.map(([x, z]) => new T.Vector2(x, -z)));
+        const geom = new T.ShapeGeometry(shape);
+        geom.rotateX(-Math.PI / 2);
+        g.add(new T.Mesh(geom, fillMat));
+        const loop = pts.map(([x, z]) => new T.Vector3(x, 0.008, z));
+        g.add(new T.LineLoop(new T.BufferGeometry().setFromPoints(loop), lineMat));
+        let a = 0, cxx = 0, czz = 0;
+        for (let i = 0; i < pts.length; i++) {
+          const [x1, z1] = pts[i], [x2, z2] = pts[(i + 1) % pts.length];
+          const f = x1 * z2 - x2 * z1;
+          a += f; cxx += (x1 + x2) * f; czz += (z1 + z2) * f;
+        }
+        if (Math.abs(a) > bestA) { bestA = Math.abs(a); best = [cxx / (3 * a), czz / (3 * a)]; }
+      }
+      if (best) {
+        const el = document.createElement("div");
+        el.className = "dist"; el.textContent = d.name;
+        labelBox.appendChild(el);
+        districtLabels.push({ el, v: new T.Vector3(best[0], 0, best[1]) });
+      }
+    }
+    // Дніпро — стрічка завширшки 700 м навколо осьової лінії.
+    const axis = CITY.river.map(([lo, la]) => ll(lo, la));
+    if (axis.length > 1) {
+      const pos = [], idx = [], w = 0.35;
+      for (let i = 0; i < axis.length; i++) {
+        const a = axis[Math.max(i - 1, 0)], b = axis[Math.min(i + 1, axis.length - 1)];
+        const dx = b[0] - a[0], dz = b[1] - a[1], len = Math.hypot(dx, dz) || 1;
+        const nx = -dz / len * w, nz = dx / len * w;
+        pos.push(axis[i][0] + nx, 0.004, axis[i][1] + nz,
+                 axis[i][0] - nx, 0.004, axis[i][1] - nz);
+        if (i) { const k = (i - 1) * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+      }
+      const geom = new T.BufferGeometry();
+      geom.setAttribute("position", new T.Float32BufferAttribute(pos, 3));
+      geom.setIndex(idx);
+      g.add(new T.Mesh(geom, new T.MeshBasicMaterial({ color: col("#4a8fd4"), transparent: true,
+        opacity: 0.28, depthWrite: false, side: T.DoubleSide })));
+    }
+  }
   for (const p of order) {
-    const v = p.st.map(s => new T.Vector3(s.px, 0, s.pz));
+    const v = p.st.map(s => new T.Vector3(s.px, 0.012, s.pz));
     g.add(new T.Line(new T.BufferGeometry().setFromPoints(v),
-          new T.LineBasicMaterial({ color: col(p.line.color), transparent: true, opacity: 0.32 })));
+          new T.LineBasicMaterial({ color: col(p.line.color), transparent: true, opacity: 0.38,
+                                    depthWrite: false })));
   }
   return g;
 }
@@ -308,7 +362,7 @@ function frame() {
   // Вписуємо самі станції, а не габаритний ящик: глибоких станцій жменя, і порожній
   // ящик до −105 м по всіх кутах з'їдав би третину кадру. Сітка хай тікає за край.
   for (const s of geo) corners.push(new T.Vector3(s.px, y(s), s.pz), new T.Vector3(s.px, 0, s.pz));
-  corners.push(new T.Vector3(xMin - 1.1, 0, zMin), new T.Vector3(xMin - 1.1, -deep, zMin));
+  corners.push(new T.Vector3(xMin - 1.9, 0, zMin), new T.Vector3(xMin - 1.9, -deep, zMin));  // 1,9 км ліворуч — місце під підписи лінійки
 }
 const dir = new T.Vector3(), right = new T.Vector3(), up = new T.Vector3(), rel = new T.Vector3(),
       eye = new T.Vector3();
@@ -388,11 +442,28 @@ function drawLabels() {
   for (const s of deepTop) put(s, true, false);
   if (S.names) for (const s of geo) if (!deepTop.includes(s)) put(s, false, false);
   for (const s of [S.pinned, S.hover]) if (s && s.px != null) put(s, true, true);
+  // Черга поступливості: станції → лінійка глибин → райони. Хто пізніше, той ховається.
+  const free = (x, yy, w, h) => !boxes.some(b => x < b[0] + b[2] && b[0] < x + w &&
+                                                 yy < b[1] + b[3] && b[1] < yy + h);
   for (const el of rulerLabels) {
     const p = toScreen(el.v, r.width, r.height);
-    const show = p.in && Math.abs(S.el) < 80 && p.y > 46 && p.x > 0 && p.x < r.width;
-    el.style.display = show ? "block" : "none";
-    if (show) { el.style.left = p.x + "px"; el.style.top = p.y + "px"; }
+    el.style.display = "none";
+    if (!p.in || Math.abs(S.el) >= 80 || p.y < 46 || p.x < 0 || p.x > r.width) continue;
+    el.style.display = "block";
+    const w = el.offsetWidth, box = [p.x - w, p.y - 7, w, 14];
+    if (!free(...box)) { el.style.display = "none"; continue; }
+    boxes.push(box);
+    el.style.left = p.x + "px"; el.style.top = p.y + "px";
+  }
+  for (const d of districtLabels) {
+    const p = toScreen(d.v, r.width, r.height);
+    d.el.style.display = "none";
+    if (!p.in || p.y < 46 || p.x < 30 || p.x > r.width - 30 || p.y > r.height - 20) continue;
+    d.el.style.display = "block";
+    const w = d.el.offsetWidth, box = [p.x - w / 2, p.y - 7, w, 14];
+    if (!free(...box)) { d.el.style.display = "none"; continue; }
+    boxes.push(box);
+    d.el.style.left = p.x + "px"; d.el.style.top = p.y + "px";
   }
 }
 

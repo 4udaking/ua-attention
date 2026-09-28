@@ -11,8 +11,11 @@ if not src.exists():
     sys.exit(1)
 tpl = (A / "metro_template.html").read_text(encoding="utf-8")
 data = src.read_text(encoding="utf-8")
-assert "/*__DATA__*/null" in tpl
+city = A.parent / "data" / "metro" / "city.json"
+assert "/*__DATA__*/null" in tpl and "/*__CITY__*/null" in tpl
 html = tpl.replace("/*__DATA__*/null", data)
+# План міста необов'язковий: без нього сцена просто лишається без підкладки.
+html = html.replace("/*__CITY__*/null", city.read_text(encoding="utf-8") if city.exists() else "null")
 (A / "metro.html").write_text(html, encoding="utf-8")
 # для GitHub Pages: повний документ (артефакт додає обгортку сам, Pages — ні)
 site = A.parent / "site"
