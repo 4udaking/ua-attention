@@ -404,3 +404,6 @@
 {"ts": "2026-09-29T08:28:14+03:00", "runner": "actions", "layer": "wiki", "status": "ok", "fetched": 1, "not_yet": ["country_UA:2026-09-28"], "range": "2026-09-15..2026-09-28"}
 {"ts": "2026-09-29T08:28:14+03:00", "runner": "actions", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
 {"ts": "2026-09-29T08:28:14+03:00", "runner": "actions", "layer": "panel", "status": "ok", "fetched": 0, "left": 0}
+{"ts": "2026-09-29T10:30:07+03:00", "runner": "laptop", "layer": "wiki", "status": "ok", "fetched": 1, "not_yet": [], "range": "2026-09-15..2026-09-28"}
+{"ts": "2026-09-29T10:30:09+03:00", "runner": "laptop", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
+{"ts": "2026-09-29T10:30:09+03:00", "runner": "laptop", "layer": "panel", "status": "ok", "fetched": 0, "left": 0}
