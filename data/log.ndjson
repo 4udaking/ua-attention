@@ -790,3 +790,6 @@
 {"ts": "2026-10-17T04:16:06+03:00", "runner": "actions", "layer": "wiki", "status": "ok", "fetched": 0, "not_yet": ["uk:2026-10-16", "country_UA:2026-10-16"], "range": "2026-10-03..2026-10-16"}
 {"ts": "2026-10-17T04:24:34+03:00", "runner": "actions", "layer": "explore_top", "status": "ok", "fetched": 15, "left": 0}
 {"ts": "2026-10-17T04:27:23+03:00", "runner": "actions", "layer": "panel", "status": "ok", "fetched": 5, "left": 0}
+{"ts": "2026-10-17T10:30:06+03:00", "runner": "laptop", "layer": "wiki", "status": "ok", "fetched": 0, "not_yet": ["uk:2026-10-16", "country_UA:2026-10-16"], "range": "2026-10-03..2026-10-16"}
+{"ts": "2026-10-17T10:30:07+03:00", "runner": "laptop", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
+{"ts": "2026-10-17T10:30:07+03:00", "runner": "laptop", "layer": "panel", "status": "ok", "fetched": 0, "left": 0}
