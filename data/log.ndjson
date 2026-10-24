@@ -940,3 +940,7 @@
 {"ts": "2026-10-23T23:26:45+03:00", "runner": "actions", "layer": "wiki", "status": "ok", "fetched": 0, "not_yet": [], "range": "2026-10-09..2026-10-22"}
 {"ts": "2026-10-23T23:26:46+03:00", "runner": "actions", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
 {"ts": "2026-10-23T23:26:46+03:00", "runner": "actions", "layer": "panel", "status": "ok", "fetched": 0, "left": 0}
+{"ts": "2026-10-24T04:32:20+03:00", "runner": "actions", "layer": "trending", "status": "ok", "window": 811, "active": 31, "written": 64, "new": 11, "rss": 10}
+{"ts": "2026-10-24T04:32:21+03:00", "runner": "actions", "layer": "wiki", "status": "ok", "fetched": 0, "not_yet": ["uk:2026-10-23", "country_UA:2026-10-23"], "range": "2026-10-10..2026-10-23"}
+{"ts": "2026-10-24T04:41:53+03:00", "runner": "actions", "layer": "explore_top", "status": "ok", "fetched": 15, "left": 0}
+{"ts": "2026-10-24T04:44:43+03:00", "runner": "actions", "layer": "panel", "status": "ok", "fetched": 5, "left": 0}
