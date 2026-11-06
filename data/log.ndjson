@@ -1223,3 +1223,6 @@
 {"ts": "2026-11-05T23:38:56+02:00", "runner": "laptop", "layer": "wiki", "status": "ok", "fetched": 0, "not_yet": [], "range": "2026-10-22..2026-11-04"}
 {"ts": "2026-11-06T00:24:43+02:00", "runner": "laptop", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
 {"ts": "2026-11-06T00:24:43+02:00", "runner": "laptop", "layer": "panel", "status": "ok", "fetched": 0, "left": 0}
+{"ts": "2026-11-06T10:30:44+02:00", "runner": "laptop", "layer": "wiki", "status": "ok", "fetched": 0, "not_yet": [], "range": "2026-10-23..2026-11-05"}
+{"ts": "2026-11-06T10:30:55+02:00", "runner": "laptop", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
+{"ts": "2026-11-06T10:30:55+02:00", "runner": "laptop", "layer": "panel", "status": "ok", "fetched": 0, "left": 0}
