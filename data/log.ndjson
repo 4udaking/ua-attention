@@ -1253,3 +1253,6 @@
 {"ts": "2026-11-07T22:52:30+02:00", "runner": "actions", "layer": "wiki", "status": "ok", "fetched": 0, "not_yet": [], "range": "2026-10-24..2026-11-06"}
 {"ts": "2026-11-07T22:52:31+02:00", "runner": "actions", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
 {"ts": "2026-11-07T22:52:31+02:00", "runner": "actions", "layer": "panel", "status": "ok", "fetched": 0, "left": 0}
+{"ts": "2026-11-08T04:23:37+02:00", "runner": "actions", "layer": "wiki", "status": "ok", "fetched": 0, "not_yet": ["uk:2026-11-07", "country_UA:2026-11-07"], "range": "2026-10-25..2026-11-07"}
+{"ts": "2026-11-08T04:27:54+02:00", "runner": "actions", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
+{"ts": "2026-11-08T04:30:35+02:00", "runner": "actions", "layer": "panel", "status": "ok", "fetched": 5, "left": 0}
