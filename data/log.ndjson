@@ -1578,3 +1578,6 @@
 {"ts": "2026-11-26T03:18:32+02:00", "runner": "actions", "layer": "explore_top", "status": "throttled_retry"}
 {"ts": "2026-11-26T03:21:45+02:00", "runner": "actions", "layer": "explore_top", "status": "ok", "fetched": 2, "left": 0}
 {"ts": "2026-11-26T03:25:51+02:00", "runner": "actions", "layer": "panel", "status": "ok", "fetched": 5, "left": 0}
+{"ts": "2026-11-26T06:58:14+02:00", "runner": "actions", "layer": "wiki", "status": "ok", "fetched": 2, "not_yet": [], "range": "2026-11-12..2026-11-25"}
+{"ts": "2026-11-26T06:58:15+02:00", "runner": "actions", "layer": "explore_top", "status": "ok", "fetched": 0, "left": 0}
+{"ts": "2026-11-26T06:58:15+02:00", "runner": "actions", "layer": "panel", "status": "ok", "fetched": 0, "left": 0}
